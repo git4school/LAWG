@@ -1,2 +1,7 @@
 .idea
 
+# Files generated with pyinstaller
+dist
+build
+*.spec
+__pycache__
