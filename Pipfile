@@ -12,6 +12,7 @@ GitPython = "==3.1.26"
 
 [dev-packages]
 pyinstaller = "*"
+pycodestyle = "*"
 
 [requires]
 python_version = "3.7"
@@ -20,3 +21,4 @@ python_version = "3.7"
 start = "python git4school_watch_dog.py"
 package = "pyinstaller --onefile --noupx git4school_watch_dog.py"
 check = "pip -V"
+lint = "pycodestyle -v git4school_watch_dog.py"
