@@ -46,7 +46,7 @@ class FileWatcherWatchdog(FileWatcherInterface):
         self.repo = Repo(repo_path)
         self.ssh_path = ssh_path
         patterns = ["*"]
-        ignore_patterns = ["*~"]
+        ignore_patterns = ["*~", r"*\.git*"]
         ignore_directories = True
         case_sensitive = True
         my_event_handler = PatternMatchingEventHandler(patterns,
