@@ -1,12 +1,12 @@
-import os
 import time
+from pathlib import Path
 
-from utils.Watcher import FileWatcherWatchdog
+from utils.file_watcher import FileWatcherWatchdog
 
 if __name__ == "__main__":
-    folder_path = '.'  # os.path.join('..', 'test-gitpython')
-    repo_path = '.'  # os.path.join('..', 'test-gitpython')
-    ssh_path = os.path.join(os.path.expanduser('~'), '.ssh', 'id_rsa')
+    folder_path = Path('..') / 'test-gitpython'
+    repo_path = Path('..') / 'test-gitpython'
+    ssh_path = Path.home() / '.ssh' / 'id_ed25519'
 
     file_watcher = FileWatcherWatchdog(folder_path, repo_path, ssh_path)
     file_watcher.start()

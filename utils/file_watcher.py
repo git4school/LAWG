@@ -1,5 +1,5 @@
-import os
 from abc import ABC, abstractmethod
+from pathlib import Path
 
 from git import Repo, RemoteProgress
 from watchdog.events import PatternMatchingEventHandler
@@ -72,13 +72,10 @@ class FileWatcherWatchdog(FileWatcherInterface):
         print(f"Someone deleted {event.src_path}!")
 
     def on_modified(self, event):
-        path = os.path.abspath(event.src_path)
-        print(
-            f"{path} has been modified, git-committed ! <-- {event}")
-        self.repo.index.add([path])
+        path = Path(event.src_path)
+        self.repo.index.add([path.resolve()])
         self.repo.index.commit(
-            f"Git4school auto-commit: "
-            f"{path} has been modified")
+            f"Git4school auto-commit: {path.name} has been modified")
 
     def on_moved(self, event):
         print(f"ok ok ok, someone moved {event.src_path} to {event.dest_path}")
