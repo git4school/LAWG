@@ -14,4 +14,4 @@ def test_set_valid_folder_path(yaml_sfr):
 
 def test_set_invalid_folder_path(yaml_sfr):
     with pytest.raises(ValueError):
-        yaml_sfr.folder_path = "C:/ert/trgr/tgez/README.md"
+        yaml_sfr.folder_path = "5:/ert/trgr/tgez/README.md"

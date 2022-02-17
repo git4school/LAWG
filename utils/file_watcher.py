@@ -24,24 +24,6 @@ class MyProgressPrinter(RemoteProgress):
 
 
 class FileWatcherWatchdog(FileWatcherInterface):
-
-    def start(self):
-        self.observer.start()
-
-    def stop(self):
-        self.push()
-        self.observer.stop()
-        self.observer.join()
-
-    def push(self):
-        try:
-            ssh_cmd = f'ssh -v -i {self.ssh_path}'
-            with self.repo.git.custom_environment(GIT_SSH_COMMAND=ssh_cmd):
-                self.origin.push()  # progress=MyProgressPrinter())
-                print("Pushed !")
-        except Exception as e:
-            print(e)
-
     def __init__(self, folder_to_watch, repo_path, ssh_path):
         self.repo = Repo(repo_path)
         self.ssh_path = ssh_path
@@ -65,6 +47,23 @@ class FileWatcherWatchdog(FileWatcherInterface):
         self.observer.schedule(my_event_handler, folder_to_watch,
                                recursive=True)
 
+    def start(self):
+        self.observer.start()
+
+    def stop(self):
+        self.push()
+        self.observer.stop()
+        self.observer.join()
+
+    def push(self):
+        try:
+            ssh_cmd = f'ssh -v -i {self.ssh_path}'
+            with self.repo.git.custom_environment(GIT_SSH_COMMAND=ssh_cmd):
+                self.origin.push()  # progress=MyProgressPrinter())
+                print("Pushed !")
+        except Exception as e:
+            print(e)
+
     def on_created(self, event):
         print(f"{event.src_path} has been created!")
 
@@ -73,7 +72,7 @@ class FileWatcherWatchdog(FileWatcherInterface):
 
     def on_modified(self, event):
         path = Path(event.src_path)
-        self.repo.index.add([path.resolve()])
+        self.repo.index.add([str(path.resolve())])
         self.repo.index.commit(
             f"Git4school auto-commit: {path.name} has been modified")
 
