@@ -1,12 +1,10 @@
-from prompt_toolkit import prompt
-from prompt_toolkit.completion import NestedCompleter
-
+from prompt import PromptAutocomplete
 from utils.file_watcher import FileWatcherWatchdog
 from utils.settings_file_reader import YAMLSettingsFileReader, \
     SettingsFileReaderInterface
 
 
-def read_settings(settings_manager: SettingsFileReaderInterface):
+def read_settings_until_correct(settings_manager: SettingsFileReaderInterface):
     try:
         settings_manager.read(".settings.yml")
     except FileNotFoundError as e:
@@ -14,48 +12,33 @@ def read_settings(settings_manager: SettingsFileReaderInterface):
         input(
             "The file '.settings.yml' was created. "
             "Please fill it with the correct data and press enter to continue.")
-        read_settings(settings_manager)
+        read_settings_until_correct(settings_manager)
     except ValueError as e:
         print(e)
         input(
             "Please correct the path '.settings.yml' and press enter to continue.")
-        read_settings(settings_manager)
+        read_settings_until_correct(settings_manager)
     except KeyError as e:
         print(e)
         input(
             "Please fill the file '.settings.yml' with the correct data "
             "and press enter to continue.")
-        read_settings(settings_manager)
-
-
-def prompt_fix(questions: list):
-    command = NestedCompleter.from_nested_dict({
-        'fix': {
-            '#1': None,
-            '#2': None,
-            '#3': None
-        }
-    })
-    print(prompt(completer=command))
+        read_settings_until_correct(settings_manager)
 
 
 if __name__ == "__main__":
-
-    # folder_path = Path('..') / 'test-gitpython'
-    # repo_path = Path('..') / 'test-gitpython'
-    # ssh_path = Path.home() / '.ssh' / 'id_ed25519'
-
-    # file_watcher = FileWatcherWatchdog(folder_path, repo_path, ssh_path)
     settings_file_reader = YAMLSettingsFileReader()
-    read_settings(settings_file_reader)
+    read_settings_until_correct(settings_file_reader)
     file_watcher = FileWatcherWatchdog(settings_file_reader.folder_path,
                                        settings_file_reader.repo_path,
                                        settings_file_reader.ssh_path)
     file_watcher.start()
 
+    command_prompt = PromptAutocomplete(settings_file_reader.questions)
+
     try:
         while True:
-            prompt_fix(settings_file_reader.questions)
-            # time.sleep(1)
+            command_prompt.prompt()
     except KeyboardInterrupt:
+        print("stop")
         file_watcher.stop()
