@@ -19,6 +19,7 @@ class SettingsFileReaderInterface(ABC):
         self._folder_path = None
         self._repo_path = None
         self._ssh_path = None
+        self._questions = None
 
     @abstractmethod
     def read(self, path):
@@ -54,6 +55,14 @@ class SettingsFileReaderInterface(ABC):
         self._repo_path = path.resolve(strict=True)
 
     @property
+    def questions(self):
+        return self._questions
+
+    @questions.setter
+    def questions(self, value):
+        self._questions = value
+
+    @property
     def ssh_path(self):
         return str(self._ssh_path)
 
@@ -77,6 +86,7 @@ class YAMLSettingsFileReader(SettingsFileReaderInterface):
             self.folder_path = settings["folder_path"]
             self.repo_path = settings["repo_path"]
             self.ssh_path = settings["ssh_path"]
+            self.questions = settings["questions"]
         except KeyError as key:
             raise KeyError(f"{key} is missing from the settings file.")
 
@@ -85,6 +95,7 @@ class YAMLSettingsFileReader(SettingsFileReaderInterface):
     def create_settings_file(self):
         data_template = {'folder_path': ".",
                          'repo_path': ".",
-                         'ssh_path': str(Path.home() / '.ssh' / 'id_rsa')}
+                         'ssh_path': str(Path.home() / '.ssh' / 'id_rsa'),
+                         'questions': []}
         with open('.settings.yml', 'w') as file:
             yaml.dump(data_template, file)

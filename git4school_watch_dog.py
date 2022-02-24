@@ -1,7 +1,9 @@
-import time
+from prompt_toolkit import prompt
+from prompt_toolkit.completion import NestedCompleter
 
 from utils.file_watcher import FileWatcherWatchdog
-from utils.settings_file_reader import YAMLSettingsFileReader, SettingsFileReaderInterface
+from utils.settings_file_reader import YAMLSettingsFileReader, \
+    SettingsFileReaderInterface
 
 
 def read_settings(settings_manager: SettingsFileReaderInterface):
@@ -15,7 +17,8 @@ def read_settings(settings_manager: SettingsFileReaderInterface):
         read_settings(settings_manager)
     except ValueError as e:
         print(e)
-        input("Please correct the path '.settings.yml' and press enter to continue.")
+        input(
+            "Please correct the path '.settings.yml' and press enter to continue.")
         read_settings(settings_manager)
     except KeyError as e:
         print(e)
@@ -23,6 +26,17 @@ def read_settings(settings_manager: SettingsFileReaderInterface):
             "Please fill the file '.settings.yml' with the correct data "
             "and press enter to continue.")
         read_settings(settings_manager)
+
+
+def prompt_fix(questions: list):
+    command = NestedCompleter.from_nested_dict({
+        'fix': {
+            '#1': None,
+            '#2': None,
+            '#3': None
+        }
+    })
+    print(prompt(completer=command))
 
 
 if __name__ == "__main__":
@@ -41,6 +55,7 @@ if __name__ == "__main__":
 
     try:
         while True:
-            time.sleep(1)
+            prompt_fix(settings_file_reader.questions)
+            # time.sleep(1)
     except KeyboardInterrupt:
         file_watcher.stop()
