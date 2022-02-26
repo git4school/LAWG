@@ -1,9 +1,9 @@
 from typing import List
 
-from git_manager import GitManagerPython
-from prompt import PromptAutocomplete
 from utils.command import FixCommand, CommandInterface, ExitCommand
 from utils.file_watcher import FileWatcherWatchdog, FileWatcherInterface
+from utils.git_manager import GitManagerPython
+from utils.prompt import PromptAutocomplete
 from utils.settings_file_reader import YAMLSettingsFileReader, \
     SettingsFileReaderInterface
 
@@ -30,7 +30,8 @@ def read_settings_until_correct(settings_manager: SettingsFileReaderInterface):
         read_settings_until_correct(settings_manager)
 
 
-def get_commands_list(questions: List[str], file_watcher_manager: FileWatcherInterface) \
+def get_commands_list(questions: List[str],
+                      file_watcher_manager: FileWatcherInterface) \
         -> List[CommandInterface]:
     fix_command = FixCommand(questions)
     exit_command = ExitCommand(file_watcher_manager)
@@ -40,8 +41,10 @@ def get_commands_list(questions: List[str], file_watcher_manager: FileWatcherInt
 if __name__ == "__main__":
     settings_file_reader = YAMLSettingsFileReader()
     read_settings_until_correct(settings_file_reader)
-    git_manager = GitManagerPython(settings_file_reader.repo_path, settings_file_reader.ssh_path)
-    file_watcher = FileWatcherWatchdog(settings_file_reader.folder_path, git_manager)
+    git_manager = GitManagerPython(settings_file_reader.repo_path,
+                                   settings_file_reader.ssh_path)
+    file_watcher = FileWatcherWatchdog(settings_file_reader.folder_path,
+                                       git_manager)
     file_watcher.start()
 
     commands = get_commands_list(settings_file_reader.questions, file_watcher)

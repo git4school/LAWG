@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
+from pathlib import Path
 
 from git import RemoteProgress
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers.polling import PollingObserver as Observer
 
-from git_manager import GitManagerInterface
+from utils.git_manager import GitManagerInterface
 
 
 class FileWatcherInterface(ABC):
@@ -61,7 +62,8 @@ class FileWatcherWatchdog(FileWatcherInterface):
     def on_modified(self, event):
         path = Path(event.src_path)
         self.git_manager.add(path)
-        self.git_manager.commit(f"Git4school auto-commit: {path.name} has been modified")
+        self.git_manager.commit(
+            f"Git4school auto-commit: {path.name} has been modified")
 
     def on_moved(self, event):
         print(f"ok ok ok, someone moved {event.src_path} to {event.dest_path}")

@@ -3,7 +3,15 @@ from abc import ABC, abstractmethod
 
 from prompt_toolkit.validation import ValidationError
 
-from file_watcher import FileWatcherInterface
+from utils.file_watcher import FileWatcherInterface
+
+
+def find_command(command_str, commands):
+    commands_found = [command for command in commands for command_key in
+                      command.command.keys() if
+                      command_key == command_str.split()[0]] \
+        if command_str else None
+    return commands_found[0] if commands_found else None
 
 
 class CommandInterface(ABC):
@@ -12,9 +20,9 @@ class CommandInterface(ABC):
         self.command = command
         self.regex = regex
 
-    @abstractmethod
     def validate(self, args):
-        pass
+        if not re.match(self.regex, args):
+            raise ValidationError(message='This command is unknown.')
 
     @abstractmethod
     def execute(self, args):
@@ -33,10 +41,6 @@ class FixCommand(CommandInterface):
         }
         super().__init__(command, regex)
 
-    def validate(self, args):
-        if not re.match(self.regex, args):
-            raise ValidationError(message='This command is unknown.')
-
     def execute(self, args):
         print("fix command executed")
 
@@ -44,16 +48,12 @@ class FixCommand(CommandInterface):
 class ExitCommand(CommandInterface):
     def __init__(self, file_watcher: FileWatcherInterface):
         self.file_watcher = file_watcher
-        regex = rf'exit *$'
+        regex = rf'(exit|quit) *$'
         command = {
-            'exit': None
+            'exit': None,
+            'quit': None
         }
         super().__init__(command, regex)
 
-    def validate(self, args):
-        if not re.match(self.regex, args):
-            raise ValidationError(message='This command is unknown.')
-
     def execute(self, args):
         self.file_watcher.stop()
-        print("exit command executed")
