@@ -20,6 +20,7 @@ class SettingsFileReaderInterface(ABC):
         self._repo_path = None
         self._ssh_path = None
         self._questions = None
+        self._completed_questions = None
 
     @abstractmethod
     def read(self, path):
@@ -35,6 +36,15 @@ class SettingsFileReaderInterface(ABC):
         """
         Creates the settings file.
         """
+        pass
+
+    @abstractmethod
+    def complete_question(self, question):
+        pass
+
+    @abstractmethod
+    def update_completed_questions(self):
+        pass
 
     @property
     def folder_path(self):
@@ -63,6 +73,14 @@ class SettingsFileReaderInterface(ABC):
         self._questions = value
 
     @property
+    def completed_questions(self):
+        return self._completed_questions
+
+    @completed_questions.setter
+    def completed_questions(self, value):
+        self._completed_questions = value
+
+    @property
     def ssh_path(self):
         return str(self._ssh_path)
 
@@ -89,6 +107,10 @@ class YAMLSettingsFileReader(SettingsFileReaderInterface):
             self.questions = settings["questions"]
         except KeyError as key:
             raise KeyError(f"{key} is missing from the settings file.")
+        try:
+            self.completed_questions = settings["completed_questions"]
+        except KeyError:
+            self.completed_questions = []
 
         return self
 
@@ -99,3 +121,17 @@ class YAMLSettingsFileReader(SettingsFileReaderInterface):
                          'questions': []}
         with open('.settings.yml', 'w') as file:
             yaml.dump(data_template, file)
+
+    def complete_question(self, question):
+        if question in self.questions \
+                and question not in self.completed_questions:
+            self.completed_questions.append(question)
+
+    def update_completed_questions(self):
+        with open('.settings.yml') as file:
+            settings = yaml.safe_load(file)
+
+        settings['completed_questions'] = self.completed_questions
+
+        with open('.settings.yml', 'w') as file:
+            yaml.dump(settings, file)

@@ -1,8 +1,9 @@
+import atexit
 from typing import List
 
 from utils.command import FixCommand, CommandInterface, ExitCommand
 from utils.file_watcher import FileWatcherWatchdog, FileWatcherInterface
-from utils.git_manager import GitManagerPython
+from utils.git_manager import GitManagerPython, GitManagerInterface
 from utils.prompt import PromptAutocomplete
 from utils.settings_file_reader import YAMLSettingsFileReader, \
     SettingsFileReaderInterface
@@ -31,9 +32,12 @@ def read_settings_until_correct(settings_manager: SettingsFileReaderInterface):
 
 
 def get_commands_list(questions: List[str],
-                      file_watcher_manager: FileWatcherInterface) \
+                      file_watcher_manager: FileWatcherInterface,
+                      git_service: GitManagerInterface,
+                      setting_file_reader: SettingsFileReaderInterface) \
         -> List[CommandInterface]:
-    fix_command = FixCommand(questions)
+    fix_command = FixCommand(questions, git_service, setting_file_reader,
+                             file_watcher_manager)
     exit_command = ExitCommand(file_watcher_manager)
     return [fix_command, exit_command]
 
@@ -47,12 +51,19 @@ if __name__ == "__main__":
                                        git_manager)
     file_watcher.start()
 
-    commands = get_commands_list(settings_file_reader.questions, file_watcher)
+    commands = get_commands_list(settings_file_reader.questions, file_watcher,
+                                 git_manager, settings_file_reader)
     command_prompt = PromptAutocomplete(commands)
+
+
+    def exit_handler():
+        file_watcher.stop()
+
+
+    atexit.register(exit_handler)
 
     try:
         while True:
             command_prompt.prompt()
     except KeyboardInterrupt:
-        print("stop")
-        file_watcher.stop()
+        pass

@@ -43,4 +43,4 @@ class PromptAutocomplete(PromptInterface):
             validator=CommandValidator(self.commands))
         command = find_command(command_str, self.commands)
         if command:
-            command.execute(None)
+            command.execute(" ".join(command_str.split()[1:]))

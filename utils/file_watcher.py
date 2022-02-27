@@ -15,6 +15,14 @@ class FileWatcherInterface(ABC):
         pass
 
     @abstractmethod
+    def pause(self):
+        pass
+
+    @abstractmethod
+    def resume(self):
+        pass
+
+    @abstractmethod
     def stop(self):
         pass
 
@@ -27,6 +35,7 @@ class MyProgressPrinter(RemoteProgress):
 
 class FileWatcherWatchdog(FileWatcherInterface):
     def __init__(self, folder_to_watch, git_manager: GitManagerInterface):
+        self.is_paused = False
         self.git_manager = git_manager
         patterns = ["*"]
         ignore_patterns = ["*~", r"*\.git*"]
@@ -48,22 +57,29 @@ class FileWatcherWatchdog(FileWatcherInterface):
     def start(self):
         self.observer.start()
 
+    def pause(self):
+        self.is_paused = True
+
+    def resume(self):
+        self.is_paused = False
+
     def stop(self):
         self.git_manager.push()
         self.observer.stop()
         self.observer.join()
 
     def on_created(self, event):
-        print(f"{event.src_path} has been created!")
+        pass
 
     def on_deleted(self, event):
-        print(f"Someone deleted {event.src_path}!")
+        pass
 
     def on_modified(self, event):
-        path = Path(event.src_path)
-        self.git_manager.add(path)
-        self.git_manager.commit(
-            f"Git4school auto-commit: {path.name} has been modified")
+        if not self.is_paused:
+            path = Path(event.src_path)
+            self.git_manager.add(path)
+            self.git_manager.commit(
+                f"Git4school auto-commit: {path.name} has been modified")
 
     def on_moved(self, event):
-        print(f"ok ok ok, someone moved {event.src_path} to {event.dest_path}")
+        pass

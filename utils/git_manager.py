@@ -21,6 +21,10 @@ class GitManagerInterface(ABC):
     def add(self, file_path):
         pass
 
+    @abstractmethod
+    def add_all(self):
+        pass
+
 
 class GitManagerPython(GitManagerInterface):
     def __init__(self, repo_path, ssh_path):
@@ -36,10 +40,12 @@ class GitManagerPython(GitManagerInterface):
             ssh_cmd = f'ssh -v -i {self.ssh_path}'
             with self.repo.git.custom_environment(GIT_SSH_COMMAND=ssh_cmd):
                 self.origin.push()  # progress=MyProgressPrinter())
-                print("Pushed !")
         except Exception as e:
             print(e)
 
     def add(self, file_path):
         path = Path(file_path)
         self.repo.index.add([str(path.resolve())])
+
+    def add_all(self):
+        self.repo.git.add(A=True)
