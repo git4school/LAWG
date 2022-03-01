@@ -24,7 +24,11 @@ To launch the script, you can use the following command :
 
 `pipenv run start`
 
-> As said previously, it's possible to run the script using python simply with `pipenv run python git4school_watch_dog.py` or creating a python run configuration with PyCharm.
+> As said previously, it's possible to run the script using python simply with `pipenv run
+> python git4school_watch_dog.py` or creating a python run configuration with PyCharm.
+>
+> In the case you're using the run configuration of PyCharm, you have to check `Emulate
+> terminal in output console` under `Execution` settings.
 
 ## ... check the code
 

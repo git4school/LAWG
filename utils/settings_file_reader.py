@@ -19,6 +19,8 @@ class SettingsFileReaderInterface(ABC):
         self._folder_path = None
         self._repo_path = None
         self._ssh_path = None
+        self._questions = None
+        self._completed_questions = None
 
     @abstractmethod
     def read(self, path):
@@ -34,6 +36,15 @@ class SettingsFileReaderInterface(ABC):
         """
         Creates the settings file.
         """
+        pass
+
+    @abstractmethod
+    def complete_question(self, question):
+        pass
+
+    @abstractmethod
+    def update_completed_questions(self):
+        pass
 
     @property
     def folder_path(self):
@@ -52,6 +63,22 @@ class SettingsFileReaderInterface(ABC):
     def repo_path(self, value):
         path = verify_path(value)
         self._repo_path = path.resolve(strict=True)
+
+    @property
+    def questions(self):
+        return self._questions
+
+    @questions.setter
+    def questions(self, value):
+        self._questions = value
+
+    @property
+    def completed_questions(self):
+        return self._completed_questions
+
+    @completed_questions.setter
+    def completed_questions(self, value):
+        self._completed_questions = value
 
     @property
     def ssh_path(self):
@@ -77,14 +104,34 @@ class YAMLSettingsFileReader(SettingsFileReaderInterface):
             self.folder_path = settings["folder_path"]
             self.repo_path = settings["repo_path"]
             self.ssh_path = settings["ssh_path"]
+            self.questions = settings["questions"]
         except KeyError as key:
             raise KeyError(f"{key} is missing from the settings file.")
+        try:
+            self.completed_questions = settings["completed_questions"]
+        except KeyError:
+            self.completed_questions = []
 
         return self
 
     def create_settings_file(self):
         data_template = {'folder_path': ".",
                          'repo_path': ".",
-                         'ssh_path': str(Path.home() / '.ssh' / 'id_rsa')}
+                         'ssh_path': str(Path.home() / '.ssh' / 'id_rsa'),
+                         'questions': []}
         with open('.settings.yml', 'w') as file:
             yaml.dump(data_template, file)
+
+    def complete_question(self, question):
+        if question in self.questions \
+                and question not in self.completed_questions:
+            self.completed_questions.append(question)
+
+    def update_completed_questions(self):
+        with open('.settings.yml') as file:
+            settings = yaml.safe_load(file)
+
+        settings['completed_questions'] = self.completed_questions
+
+        with open('.settings.yml', 'w') as file:
+            yaml.dump(settings, file)

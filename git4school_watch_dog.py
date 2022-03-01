@@ -1,10 +1,15 @@
-import time
+import atexit
+from typing import List
 
-from utils.file_watcher import FileWatcherWatchdog
-from utils.settings_file_reader import YAMLSettingsFileReader, SettingsFileReaderInterface
+from utils.command import FixCommand, CommandInterface, ExitCommand
+from utils.file_watcher import FileWatcherWatchdog, FileWatcherInterface
+from utils.git_manager import GitManagerPython, GitManagerInterface
+from utils.prompt import PromptAutocomplete
+from utils.settings_file_reader import YAMLSettingsFileReader, \
+    SettingsFileReaderInterface
 
 
-def read_settings(settings_manager: SettingsFileReaderInterface):
+def read_settings_until_correct(settings_manager: SettingsFileReaderInterface):
     try:
         settings_manager.read(".settings.yml")
     except FileNotFoundError as e:
@@ -12,35 +17,53 @@ def read_settings(settings_manager: SettingsFileReaderInterface):
         input(
             "The file '.settings.yml' was created. "
             "Please fill it with the correct data and press enter to continue.")
-        read_settings(settings_manager)
+        read_settings_until_correct(settings_manager)
     except ValueError as e:
         print(e)
-        input("Please correct the path '.settings.yml' and press enter to continue.")
-        read_settings(settings_manager)
+        input(
+            "Please correct the path '.settings.yml' and press enter to continue.")
+        read_settings_until_correct(settings_manager)
     except KeyError as e:
         print(e)
         input(
             "Please fill the file '.settings.yml' with the correct data "
             "and press enter to continue.")
-        read_settings(settings_manager)
+        read_settings_until_correct(settings_manager)
+
+
+def get_commands_list(questions: List[str],
+                      file_watcher_manager: FileWatcherInterface,
+                      git_service: GitManagerInterface,
+                      setting_file_reader: SettingsFileReaderInterface) \
+        -> List[CommandInterface]:
+    fix_command = FixCommand(questions, git_service, setting_file_reader,
+                             file_watcher_manager)
+    exit_command = ExitCommand(file_watcher_manager)
+    return [fix_command, exit_command]
 
 
 if __name__ == "__main__":
-
-    # folder_path = Path('..') / 'test-gitpython'
-    # repo_path = Path('..') / 'test-gitpython'
-    # ssh_path = Path.home() / '.ssh' / 'id_ed25519'
-
-    # file_watcher = FileWatcherWatchdog(folder_path, repo_path, ssh_path)
     settings_file_reader = YAMLSettingsFileReader()
-    read_settings(settings_file_reader)
+    read_settings_until_correct(settings_file_reader)
+    git_manager = GitManagerPython(settings_file_reader.repo_path,
+                                   settings_file_reader.ssh_path)
     file_watcher = FileWatcherWatchdog(settings_file_reader.folder_path,
-                                       settings_file_reader.repo_path,
-                                       settings_file_reader.ssh_path)
+                                       git_manager)
     file_watcher.start()
+
+    commands = get_commands_list(settings_file_reader.questions, file_watcher,
+                                 git_manager, settings_file_reader)
+    command_prompt = PromptAutocomplete(commands)
+
+
+    def exit_handler():
+        file_watcher.stop()
+
+
+    atexit.register(exit_handler)
 
     try:
         while True:
-            time.sleep(1)
+            command_prompt.prompt()
     except KeyboardInterrupt:
-        file_watcher.stop()
+        pass

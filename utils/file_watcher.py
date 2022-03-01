@@ -1,15 +1,25 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from git import Repo, RemoteProgress
+from git import RemoteProgress
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers.polling import PollingObserver as Observer
+
+from utils.git_manager import GitManagerInterface
 
 
 class FileWatcherInterface(ABC):
 
     @abstractmethod
     def start(self):
+        pass
+
+    @abstractmethod
+    def pause(self):
+        pass
+
+    @abstractmethod
+    def resume(self):
         pass
 
     @abstractmethod
@@ -24,9 +34,9 @@ class MyProgressPrinter(RemoteProgress):
 
 
 class FileWatcherWatchdog(FileWatcherInterface):
-    def __init__(self, folder_to_watch, repo_path, ssh_path):
-        self.repo = Repo(repo_path)
-        self.ssh_path = ssh_path
+    def __init__(self, folder_to_watch, git_manager: GitManagerInterface):
+        self.is_paused = False
+        self.git_manager = git_manager
         patterns = ["*"]
         ignore_patterns = ["*~", r"*\.git*"]
         ignore_directories = True
@@ -35,9 +45,6 @@ class FileWatcherWatchdog(FileWatcherInterface):
                                                        ignore_patterns,
                                                        ignore_directories,
                                                        case_sensitive)
-        self.origin = self.repo.remote(name="origin")
-
-        print(self.origin.url)
 
         my_event_handler.on_created = self.on_created
         my_event_handler.on_deleted = self.on_deleted
@@ -50,31 +57,29 @@ class FileWatcherWatchdog(FileWatcherInterface):
     def start(self):
         self.observer.start()
 
+    def pause(self):
+        self.is_paused = True
+
+    def resume(self):
+        self.is_paused = False
+
     def stop(self):
-        self.push()
+        self.git_manager.push()
         self.observer.stop()
         self.observer.join()
 
-    def push(self):
-        try:
-            ssh_cmd = f'ssh -v -i {self.ssh_path}'
-            with self.repo.git.custom_environment(GIT_SSH_COMMAND=ssh_cmd):
-                self.origin.push()  # progress=MyProgressPrinter())
-                print("Pushed !")
-        except Exception as e:
-            print(e)
-
     def on_created(self, event):
-        print(f"{event.src_path} has been created!")
+        pass
 
     def on_deleted(self, event):
-        print(f"Someone deleted {event.src_path}!")
+        pass
 
     def on_modified(self, event):
-        path = Path(event.src_path)
-        self.repo.index.add([str(path.resolve())])
-        self.repo.index.commit(
-            f"Git4school auto-commit: {path.name} has been modified")
+        if not self.is_paused:
+            path = Path(event.src_path)
+            self.git_manager.add(path)
+            self.git_manager.commit(
+                f"Git4school auto-commit: {path.name} has been modified")
 
     def on_moved(self, event):
-        print(f"ok ok ok, someone moved {event.src_path} to {event.dest_path}")
+        pass
