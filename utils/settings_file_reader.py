@@ -21,30 +21,15 @@ class SettingsFileReaderInterface(ABC):
         self._ssh_path = None
         self._questions = None
         self._completed_questions = None
+        self._groups = None
 
-    @abstractmethod
-    def read(self, path):
-        """
-        Reads the settings file.
-        param path:
-        :return:
-        """
-        pass
+    @property
+    def groups(self):
+        return self._groups
 
-    @abstractmethod
-    def create_settings_file(self):
-        """
-        Creates the settings file.
-        """
-        pass
-
-    @abstractmethod
-    def complete_question(self, question):
-        pass
-
-    @abstractmethod
-    def update_completed_questions(self):
-        pass
+    @groups.setter
+    def groups(self, value):
+        self._groups = value
 
     @property
     def folder_path(self):
@@ -89,6 +74,30 @@ class SettingsFileReaderInterface(ABC):
         path = verify_path(value)
         self._ssh_path = path.resolve(strict=True)
 
+    @abstractmethod
+    def read(self, path):
+        """
+        Reads the settings file.
+        param path:
+        :return:
+        """
+        pass
+
+    @abstractmethod
+    def create_settings_file(self):
+        """
+        Creates the settings file.
+        """
+        pass
+
+    @abstractmethod
+    def complete_question(self, question):
+        pass
+
+    @abstractmethod
+    def update_completed_questions(self):
+        pass
+
 
 class YAMLSettingsFileReader(SettingsFileReaderInterface):
     def read(self, path):
@@ -105,8 +114,10 @@ class YAMLSettingsFileReader(SettingsFileReaderInterface):
             self.repo_path = settings["repo_path"]
             self.ssh_path = settings["ssh_path"]
             self.questions = settings["questions"]
+            self.groups = settings["groups"]
         except KeyError as key:
             raise KeyError(f"{key} is missing from the settings file.")
+
         try:
             self.completed_questions = settings["completed_questions"]
         except KeyError:
@@ -118,7 +129,8 @@ class YAMLSettingsFileReader(SettingsFileReaderInterface):
         data_template = {'folder_path': ".",
                          'repo_path': ".",
                          'ssh_path': str(Path.home() / '.ssh' / 'id_rsa'),
-                         'questions': []}
+                         'questions': [],
+                         'groups': []}
         with open('.settings.yml', 'w') as file:
             yaml.dump(data_template, file)
 
