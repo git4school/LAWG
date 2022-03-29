@@ -78,8 +78,7 @@ class FileWatcherWatchdog(FileWatcherInterface):
         if not self.is_paused:
             path = Path(event.src_path)
             self.git_manager.add(path)
-            self.git_manager.commit(
-                f"Git4school auto-commit: {path.name} has been modified")
+            self.git_manager.commit(f"[auto] {path.name} has been modified")
 
     def on_moved(self, event):
         pass
