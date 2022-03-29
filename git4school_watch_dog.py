@@ -53,7 +53,9 @@ if __name__ == "__main__":
     readme_creator = ReadmeCreatorDialog()
     readme_creator.create_readme()
 
-    file_watcher.start()
+    if not settings_file_reader.no_watcher:
+        file_watcher.start()
+        atexit.register(exit_handler)
 
     commands = get_commands_list(settings_file_reader.questions, file_watcher,
                                  git_manager, settings_file_reader)

@@ -22,6 +22,7 @@ class SettingsFileReaderInterface(ABC):
         self._questions = None
         self._completed_questions = None
         self._groups = None
+        self.no_watcher = None
 
     @property
     def groups(self):
@@ -118,10 +119,8 @@ class YAMLSettingsFileReader(SettingsFileReaderInterface):
         except KeyError as key:
             raise KeyError(f"{key} is missing from the settings file.")
 
-        try:
-            self.completed_questions = settings["completed_questions"]
-        except KeyError:
-            self.completed_questions = []
+        self.completed_questions = settings.get("completed_questions", [])
+        self.no_watcher = settings.get("no_watcher", False)
 
         return self
 
@@ -130,7 +129,8 @@ class YAMLSettingsFileReader(SettingsFileReaderInterface):
                          'repo_path': ".",
                          'ssh_path': str(Path.home() / '.ssh' / 'id_rsa'),
                          'questions': [],
-                         'groups': []}
+                         'groups': [],
+                         'no_watcher': False}
         with open('.settings.yml', 'w') as file:
             yaml.dump(data_template, file)
 
