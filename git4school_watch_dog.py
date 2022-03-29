@@ -10,6 +10,10 @@ from utils.settings_file_reader import YAMLSettingsFileReader, \
     SettingsFileReaderInterface
 
 
+def exit_handler():
+    file_watcher.stop()
+
+
 def read_settings_until_correct(settings_manager: SettingsFileReaderInterface):
     try:
         settings_manager.read(".settings.yml")
@@ -62,13 +66,6 @@ if __name__ == "__main__":
     commands = get_commands_list(settings_file_reader.questions, file_watcher,
                                  git_manager, settings_file_reader)
     command_prompt = PromptAutocomplete(commands)
-
-
-    def exit_handler():
-        file_watcher.stop()
-
-
-    atexit.register(exit_handler)
 
     try:
         while True:
