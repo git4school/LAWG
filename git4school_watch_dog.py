@@ -5,7 +5,7 @@ from utils.command import FixCommand, CommandInterface, ExitCommand
 from utils.file_watcher import FileWatcherWatchdog, FileWatcherInterface
 from utils.git_manager import GitManagerPython, GitManagerInterface
 from utils.prompt import PromptAutocomplete
-from utils.readme_creator import ReadmeCreatorDialog
+from utils.readme_creator import IdentityCreatorDialog
 from utils.settings_file_reader import YAMLSettingsFileReader, \
     SettingsFileReaderInterface
 
@@ -50,8 +50,10 @@ if __name__ == "__main__":
                                    settings_file_reader.ssh_path)
     file_watcher = FileWatcherWatchdog(settings_file_reader.folder_path,
                                        git_manager)
-    readme_creator = ReadmeCreatorDialog()
-    readme_creator.create_readme()
+    identity_creator = IdentityCreatorDialog()
+
+    identity_creator.create_identity_file(settings_file_reader.repo_path,
+                                          settings_file_reader.groups)
 
     if not settings_file_reader.no_watcher:
         file_watcher.start()
