@@ -3,15 +3,7 @@ from pathlib import Path
 
 import yaml
 
-
-def verify_path(path: str) -> Path:
-    """
-    Verifies that the path exists.
-    """
-    path = Path(path)
-    if not path.exists():
-        raise ValueError(f"{path} does not exist.")
-    return path
+from . import verify_path
 
 
 class SettingsFileReaderInterface(ABC):
