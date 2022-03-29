@@ -1,4 +1,5 @@
 import atexit
+from pathlib import Path
 from typing import List
 
 from utils.command import FixCommand, CommandInterface, ExitCommand
@@ -47,6 +48,14 @@ def get_commands_list(questions: List[str],
     return [fix_command, exit_command]
 
 
+def update_gitignore(gitignore_path: Path) -> None:
+    exe_wildcard = "git4school_watch_dog*"
+    with open(gitignore_path, "a+") as gitignore_file:
+        gitignore_file.seek(0)
+        if exe_wildcard not in gitignore_file.read():
+            gitignore_file.write(f"\n{exe_wildcard}")
+
+
 if __name__ == "__main__":
     settings_file_reader = YAMLSettingsFileReader()
     read_settings_until_correct(settings_file_reader)
@@ -55,6 +64,8 @@ if __name__ == "__main__":
     file_watcher = FileWatcherWatchdog(settings_file_reader.folder_path,
                                        git_manager)
     identity_creator = IdentityCreatorDialog()
+
+    update_gitignore(Path(settings_file_reader.repo_path) / ".gitignore")
 
     identity_creator.create_identity_file(settings_file_reader.repo_path,
                                           settings_file_reader.groups)
