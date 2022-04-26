@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from pathlib import Path
+from pathlib import Path, PurePath
 
 from git import Repo
 
@@ -8,6 +8,18 @@ class GitManagerInterface(ABC):
     def __init__(self, repo_path, ssh_path):
         self.repo_path = repo_path
         self.ssh_path = ssh_path
+
+    @abstractmethod
+    def checkout(self, branch: str):
+        pass
+
+    @abstractmethod
+    def read_tree(self, branch: str):
+        pass
+
+    @abstractmethod
+    def checkout_index(self):
+        pass
 
     @abstractmethod
     def commit(self, message):
@@ -32,6 +44,15 @@ class GitManagerPython(GitManagerInterface):
         self.repo = Repo(repo_path)
         self.origin = self.repo.remote(name="origin")
 
+    def checkout(self, branch: str):
+        self.repo.git.checkout(branch)
+
+    def read_tree(self, branch: str):
+        self.repo.git.read_tree(branch)
+
+    def checkout_index(self):
+        self.repo.git.checkout_index(f=True, a=True)
+
     def commit(self, message):
         self.repo.index.commit(message)
 
@@ -45,7 +66,7 @@ class GitManagerPython(GitManagerInterface):
 
     def add(self, file_path):
         path = Path(file_path)
-        self.repo.index.add([str(path.resolve())])
+        self.repo.git.add(str(path.resolve()))
 
     def add_all(self):
         self.repo.git.add(A=True)
