@@ -1,7 +1,7 @@
 import contextlib
 import time
 from abc import ABC, abstractmethod
-from pathlib import Path, PurePosixPath, PurePath
+from pathlib import Path
 
 from git import RemoteProgress
 from watchdog.events import RegexMatchingEventHandler
@@ -18,10 +18,6 @@ class FileWatcherInterface(ABC):
 
     @abstractmethod
     def pause(self):
-        pass
-
-    @abstractmethod
-    def resume(self):
         pass
 
     @abstractmethod
@@ -63,10 +59,12 @@ class FileWatcherWatchdog(FileWatcherInterface):
     def __init__(self, folder_to_watch, git_manager: GitManagerInterface):
         self.git_manager = git_manager
         regexes = [".*"]
-        ignore_regexes = [".*~", "(?:.+\/)?\.git\/.*"]
+        ignore_regexes = [".*~", "(?:.+[/\\\\])?\\.git[/\\\\].*"]
         ignore_directories = True
         case_sensitive = True
-        my_event_handler = RegexMatchingEventHandler(regexes, ignore_regexes, ignore_directories, case_sensitive)
+        my_event_handler = RegexMatchingEventHandler(regexes, ignore_regexes,
+                                                     ignore_directories,
+                                                     case_sensitive)
 
         my_event_handler.on_created = self.on_created
         my_event_handler.on_deleted = self.on_deleted
@@ -78,12 +76,6 @@ class FileWatcherWatchdog(FileWatcherInterface):
 
     def start(self):
         self.observer.start()
-
-    def pause(self):
-        self.observer.pause()
-
-    def resume(self):
-        self.observer.resume()
 
     def stop(self):
         self.git_manager.push()

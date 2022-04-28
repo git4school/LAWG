@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from pathlib import Path, PurePath
+from pathlib import Path
 
 from git import Repo
 
@@ -68,7 +68,7 @@ class GitManagerPython(GitManagerInterface):
         return self.repo.git.checkout(branch)
 
     def reset(self, ref: str, soft=False, mixed=True, hard=False):
-        return self.repo.head.reset(ref, index=not soft, working_tree=hard)#self.repo.git.reset(ref, soft, mixed, hard)
+        return self.repo.head.reset(ref, index=not soft, working_tree=hard)
 
     def read_tree(self, branch: str):
         return self.repo.git.read_tree(branch)
