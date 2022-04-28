@@ -61,7 +61,6 @@ class PausingObserver(Observer):
 
 class FileWatcherWatchdog(FileWatcherInterface):
     def __init__(self, folder_to_watch, git_manager: GitManagerInterface):
-        self.is_paused = False
         self.git_manager = git_manager
         regexes = [".*"]
         ignore_regexes = [".*~", "(?:.+\/)?\.git\/.*"]
@@ -107,11 +106,17 @@ class FileWatcherWatchdog(FileWatcherInterface):
         pass
 
     def __save(self, raw_path: Path, event_type: str):
-        with self.observer.ignore_events():
-            path = Path(raw_path)
-            self.git_manager.checkout("g4s-auto")
-            self.git_manager.add(path)
-            self.git_manager.commit(f"[auto] {path.name} has been {event_type}")
-            self.git_manager.checkout("master")
-            self.git_manager.read_tree("g4s-auto")
-            self.git_manager.checkout_index()
+        path = Path(raw_path)
+        if "g4s-auto" not in self.git_manager.get_local_branches():
+            self.git_manager.branch("g4s-auto")  # on pourrait pousser en vérifiant les branches en remote et en pullant
+        self.git_manager.reset("g4s-auto")
+        self.git_manager.add(path)
+        self.git_manager.commit(f"[auto] {path.name} has been {event_type}")
+        self.git_manager.branch("g4s-auto", force=True)
+        self.git_manager.reset("HEAD@{2}")
+
+    @contextlib.contextmanager
+    def pause(self):
+        self.observer.pause()
+        yield
+        self.observer.resume()
