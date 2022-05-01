@@ -83,7 +83,10 @@ class FileWatcherWatchdog(FileWatcherInterface):
         self.observer.join()
 
     def on_created(self, event):
-        self.__save(event.src_path, event.event_type)
+        if not self.git_manager.get_diff("g4s-auto"):
+            self.__save(event.src_path, "modified", amend=True)
+        else:
+            self.__save(event.src_path, event.event_type)
 
     def on_deleted(self, event):
         self.__save(event.src_path, event.event_type)
@@ -97,13 +100,16 @@ class FileWatcherWatchdog(FileWatcherInterface):
         self.__save(event.src_path, event.event_type)
         pass
 
-    def __save(self, raw_path: Path, event_type: str):
+    def __save(self, raw_path: Path, event_type: str, amend=False):
         path = Path(raw_path)
         if "g4s-auto" not in self.git_manager.get_local_branches():
             self.git_manager.branch("g4s-auto")  # on pourrait pousser en vérifiant les branches en remote et en pullant
         self.git_manager.reset("g4s-auto")
         self.git_manager.add(path)
-        self.git_manager.commit(f"[auto] {path.name} has been {event_type}")
+        if amend:
+            self.git_manager.amend(f"[auto] {path.name} has been {event_type}")
+        else:
+            self.git_manager.commit(f"[auto] {path.name} has been {event_type}")
         self.git_manager.branch("g4s-auto", force=True)
         self.git_manager.reset("HEAD@{2}")
 

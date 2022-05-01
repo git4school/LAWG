@@ -30,7 +30,7 @@ class GitManagerInterface(ABC):
         pass
 
     @abstractmethod
-    def push(self):
+    def push(self, all: bool):
         pass
 
     @abstractmethod
@@ -57,6 +57,14 @@ class GitManagerInterface(ABC):
     def get_current_branch(self):
         pass
 
+    @abstractmethod
+    def get_diff(self, ref: str):
+        pass
+
+    @abstractmethod
+    def amend(self, message: str):
+        pass
+
 
 class GitManagerPython(GitManagerInterface):
     def __init__(self, repo_path, ssh_path):
@@ -79,11 +87,11 @@ class GitManagerPython(GitManagerInterface):
     def commit(self, message: str):
         return self.repo.index.commit(message)
 
-    def push(self):
+    def push(self, all=False):
         try:
             ssh_cmd = f'ssh -v -i {self.ssh_path}'
             with self.repo.git.custom_environment(GIT_SSH_COMMAND=ssh_cmd):
-                return self.origin.push()  # progress=MyProgressPrinter())
+                return self.origin.push(all=all)  # progress=MyProgressPrinter())
         except Exception as e:
             print(e)
 
@@ -105,3 +113,9 @@ class GitManagerPython(GitManagerInterface):
 
     def get_current_branch(self):
         return self.repo.head
+
+    def get_diff(self, ref=None):
+        return self.repo.git.diff(ref)
+
+    def amend(self, message: str):
+        return self.repo.git.commit('--amend', '--allow-empty', '-m', message)
