@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 from git import RemoteProgress
+from pathspec.patterns import GitWildMatchPattern
 from watchdog.events import RegexMatchingEventHandler
 from watchdog.observers.polling import PollingObserver as Observer
 
@@ -55,11 +56,27 @@ class PausingObserver(Observer):
         self.resume()
 
 
+def get_regex_from_gitignore(gitignore_path: str):
+    """
+    Still have to manage '!!files' syntax to 'unignore' files
+    The support for the '**' syntax is not quite good
+    """
+
+    patterns = []
+    with open(Path(gitignore_path), "r") as gitignore:
+        patterns = filter(lambda i: i, gitignore.read().splitlines())
+
+    # regexes = map(lambda p: ".*"+fnmatch.translate(p), patterns)
+    regexes = map(lambda p: GitWildMatchPattern.pattern_to_regex(p)[0], patterns)
+    return list(regexes)
+
+
 class FileWatcherWatchdog(FileWatcherInterface):
     def __init__(self, folder_to_watch, git_manager: GitManagerInterface):
         self.git_manager = git_manager
+        gitignore_regexes = get_regex_from_gitignore(Path(folder_to_watch) / ".gitignore")
         regexes = [".*"]
-        ignore_regexes = [".*~", "(?:.+[/\\\\])?\\.git[/\\\\].*"]
+        ignore_regexes = [".*~", "(?:.+[/\\\\])?\\.git[/\\\\].*"] + gitignore_regexes
         ignore_directories = True
         case_sensitive = True
         my_event_handler = RegexMatchingEventHandler(regexes, ignore_regexes,
@@ -73,6 +90,7 @@ class FileWatcherWatchdog(FileWatcherInterface):
         self.observer = PausingObserver()
         self.observer.schedule(my_event_handler, folder_to_watch,
                                recursive=True)
+        self.previous_diff = None
 
     def start(self):
         self.observer.start()
@@ -83,27 +101,32 @@ class FileWatcherWatchdog(FileWatcherInterface):
         self.observer.join()
 
     def on_created(self, event):
-        if not self.git_manager.get_diff("g4s-auto"):
+        current_diff = self.git_manager.get_diff()
+        if current_diff == self.previous_diff:
             self.__save(event.src_path, "modified", amend=True)
         else:
             self.__save(event.src_path, event.event_type)
+        self.previous_diff = None
 
     def on_deleted(self, event):
+        self.previous_diff = self.git_manager.get_diff()
         self.__save(event.src_path, event.event_type)
         pass
 
     def on_modified(self, event):
         self.__save(event.src_path, event.event_type)
+        self.previous_diff = None
         pass
 
     def on_moved(self, event):
         self.__save(event.src_path, event.event_type)
+        self.previous_diff = None
         pass
 
     def __save(self, raw_path: Path, event_type: str, amend=False):
         path = Path(raw_path)
         if "g4s-auto" not in self.git_manager.get_local_branches():
-            self.git_manager.branch("g4s-auto")  # on pourrait pousser en vérifiant les branches en remote et en pullant
+            self.git_manager.branch("g4s-auto")
         self.git_manager.reset("g4s-auto")
         self.git_manager.add(path)
         if amend:
