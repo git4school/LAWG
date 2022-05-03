@@ -101,27 +101,28 @@ class FileWatcherWatchdog(FileWatcherInterface):
         self.observer.join()
 
     def on_created(self, event):
+        is_diff_empty = self.__is_diff_empty(event)
         current_diff = self.git_manager.get_diff()
         if current_diff == self.previous_diff:
             self.__save(event.src_path, "modified", amend=True)
-        else:
+        elif not is_diff_empty:
             self.__save(event.src_path, event.event_type)
-        self.previous_diff = None
+        self.__reset_flags()
 
     def on_deleted(self, event):
-        self.previous_diff = self.git_manager.get_diff()
-        self.__save(event.src_path, event.event_type)
-        pass
+        if not self.__is_diff_empty(event):
+            self.previous_diff = self.git_manager.get_diff()
+            self.__save(event.src_path, event.event_type)
 
     def on_modified(self, event):
-        self.__save(event.src_path, event.event_type)
-        self.previous_diff = None
-        pass
+        if not self.__is_diff_empty(event):
+            self.__save(event.src_path, event.event_type)
+        self.__reset_flags()
 
     def on_moved(self, event):
-        self.__save(event.src_path, event.event_type)
-        self.previous_diff = None
-        pass
+        if not self.__is_diff_empty(event):
+            self.__save(event.src_path, event.event_type)
+        self.__reset_flags()
 
     def __save(self, raw_path: Path, event_type: str, amend=False):
         path = Path(raw_path)
@@ -129,12 +130,16 @@ class FileWatcherWatchdog(FileWatcherInterface):
             self.git_manager.branch("g4s-auto")
         self.git_manager.reset("g4s-auto")
         self.git_manager.add(path)
-        if amend:
-            self.git_manager.amend(f"[auto] {path.name} has been {event_type}")
-        else:
-            self.git_manager.commit(f"[auto] {path.name} has been {event_type}")
+        self.git_manager.commit(f"[auto] {path.name} has been {event_type}", amend)
         self.git_manager.branch("g4s-auto", force=True)
         self.git_manager.reset("HEAD@{2}")
+
+    def __reset_flags(self):
+        self.previous_diff = None
+
+    def __is_diff_empty(self, event) -> bool:
+        self.git_manager.add(event.src_path, intent_to_add=True)
+        return not self.git_manager.get_diff("g4s-auto")
 
     @contextlib.contextmanager
     def pause(self):

@@ -26,7 +26,7 @@ class GitManagerInterface(ABC):
         pass
 
     @abstractmethod
-    def commit(self, message: str):
+    def commit(self, message: str, amend: bool):
         pass
 
     @abstractmethod
@@ -34,7 +34,7 @@ class GitManagerInterface(ABC):
         pass
 
     @abstractmethod
-    def add(self, file_path):
+    def add(self, file_path, intent_to_add: bool):
         pass
 
     @abstractmethod
@@ -61,10 +61,6 @@ class GitManagerInterface(ABC):
     def get_diff(self, ref: str):
         pass
 
-    @abstractmethod
-    def amend(self, message: str):
-        pass
-
 
 class GitManagerPython(GitManagerInterface):
     def __init__(self, repo_path, ssh_path):
@@ -84,8 +80,8 @@ class GitManagerPython(GitManagerInterface):
     def checkout_index(self):
         return self.repo.git.checkout_index(f=True, a=True)
 
-    def commit(self, message: str):
-        return self.repo.index.commit(message)
+    def commit(self, message: str, amend=False):
+        return self.repo.git.commit(message=message, amend=amend)
 
     def push(self, all=False):
         try:
@@ -95,9 +91,9 @@ class GitManagerPython(GitManagerInterface):
         except Exception as e:
             print(e)
 
-    def add(self, file_path):
+    def add(self, file_path, intent_to_add=False):
         path = Path(file_path)
-        return self.repo.git.add(str(path.resolve()))
+        return self.repo.git.add(str(path.resolve()), intent_to_add=intent_to_add)
 
     def add_all(self):
         return self.repo.git.add(A=True)
@@ -117,5 +113,3 @@ class GitManagerPython(GitManagerInterface):
     def get_diff(self, ref=None):
         return self.repo.git.diff(ref)
 
-    def amend(self, message: str):
-        return self.repo.git.commit('--amend', '--allow-empty', '-m', message)
