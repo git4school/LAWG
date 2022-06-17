@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from os import PathLike
 from pathlib import Path
 
 from git import Repo
@@ -61,6 +62,10 @@ class GitManagerInterface(ABC):
     def get_diff(self, ref: str):
         pass
 
+    @abstractmethod
+    def is_ignored(self, paths) -> bool:
+        pass
+
 
 class GitManagerPython(GitManagerInterface):
     def __init__(self, repo_path, ssh_path):
@@ -113,3 +118,5 @@ class GitManagerPython(GitManagerInterface):
     def get_diff(self, ref=None):
         return self.repo.git.diff(ref)
 
+    def is_ignored(self, paths) -> bool:
+        return bool(self.repo.ignored(paths))

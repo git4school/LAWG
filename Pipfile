@@ -12,6 +12,7 @@ GitPython = "==3.1.26"
 pyyaml = "*"
 prompt-toolkit = "*"
 pathspec = "*"
+wcmatch = "*"
 
 [dev-packages]
 pyinstaller = "*"

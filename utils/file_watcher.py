@@ -1,12 +1,14 @@
 import contextlib
+import os
 import time
 from abc import ABC, abstractmethod
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from git import RemoteProgress
 from pathspec.patterns import GitWildMatchPattern
-from watchdog.events import RegexMatchingEventHandler
+from watchdog.events import RegexMatchingEventHandler, PatternMatchingEventHandler
 from watchdog.observers.polling import PollingObserver as Observer
+from wcmatch import glob
 
 from utils.git_manager import GitManagerInterface
 
@@ -58,6 +60,7 @@ class PausingObserver(Observer):
 
 def get_regex_from_gitignore(gitignore_path: str):
     """
+    deprecated
     Still have to manage '!!files' syntax to 'unignore' files
     The support for the '**' syntax is not quite good
     """
@@ -71,15 +74,45 @@ def get_regex_from_gitignore(gitignore_path: str):
     return list(regexes)
 
 
+def get_pattern_from_gitignore(gitignore_path: str):
+    """
+    deprecated
+    :param gitignore_path:
+    :return:
+    """
+    with open(Path(gitignore_path), "r") as gitignore:
+        patterns = filter(lambda i: i, gitignore.read().splitlines())
+
+    return list(patterns)
+
+
+class WCPatternMatchingEventHandler(PatternMatchingEventHandler):
+    def __init__(self, git_manager: GitManagerInterface, patterns, gitignore_patterns, ignore_directories,
+                 case_sensitive):
+        super().__init__(patterns, gitignore_patterns, ignore_directories, case_sensitive)
+        self.git_manager = git_manager
+
+    def dispatch(self, event):
+        if self.ignore_directories and event.is_directory:
+            return
+
+        paths = []
+        if hasattr(event, 'dest_path'):
+            paths.append(os.fsdecode(event.dest_path))
+        if event.src_path:
+            paths.append(os.fsdecode(event.src_path))
+        if not self.git_manager.is_ignored(paths):
+            super().dispatch(event)
+
+
 class FileWatcherWatchdog(FileWatcherInterface):
     def __init__(self, folder_to_watch, git_manager: GitManagerInterface):
         self.git_manager = git_manager
-        gitignore_regexes = get_regex_from_gitignore(Path(folder_to_watch) / ".gitignore")
-        regexes = [".*"]
-        ignore_regexes = [".*~", "(?:.+[/\\\\])?\\.git[/\\\\].*"] + gitignore_regexes
+        patterns = ["**"]
+        gitignore_patterns = get_pattern_from_gitignore(Path(folder_to_watch) / ".gitignore") + [".git/**"]
         ignore_directories = True
         case_sensitive = True
-        my_event_handler = RegexMatchingEventHandler(regexes, ignore_regexes,
+        my_event_handler = WCPatternMatchingEventHandler(git_manager, patterns, gitignore_patterns,
                                                      ignore_directories,
                                                      case_sensitive)
 
