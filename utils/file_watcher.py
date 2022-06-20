@@ -129,7 +129,9 @@ class FileWatcherWatchdog(FileWatcherInterface):
         self.observer.start()
 
     def stop(self):
-        self.git_manager.push()
+        self.git_manager.add_all()
+        self.git_manager.commit(f"Break")
+        self.git_manager.push(all=True)
         self.observer.stop()
         self.observer.join()
 
