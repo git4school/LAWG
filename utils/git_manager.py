@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from os import PathLike
 from pathlib import Path
 
 from git import Repo
@@ -15,7 +14,7 @@ class GitManagerInterface(ABC):
         pass
 
     @abstractmethod
-    def reset(self, ref: str, soft: bool, mixed: bool, hard: bool):
+    def reset(self, ref: str, soft=False, mixed=True, hard=False):
         pass
 
     @abstractmethod
@@ -27,7 +26,7 @@ class GitManagerInterface(ABC):
         pass
 
     @abstractmethod
-    def commit(self, message: str, amend: bool):
+    def commit(self, message: str, amend: bool = False, allow_empty: bool = False):
         pass
 
     @abstractmethod
@@ -43,7 +42,7 @@ class GitManagerInterface(ABC):
         pass
 
     @abstractmethod
-    def branch(self, branch: str, force: bool):
+    def branch(self, branch: str, force: bool = False):
         pass
 
     @abstractmethod
@@ -59,7 +58,7 @@ class GitManagerInterface(ABC):
         pass
 
     @abstractmethod
-    def get_diff(self, ref: str):
+    def get_diff(self, ref: str = None):
         pass
 
     @abstractmethod
@@ -85,8 +84,8 @@ class GitManagerPython(GitManagerInterface):
     def checkout_index(self):
         return self.repo.git.checkout_index(f=True, a=True)
 
-    def commit(self, message: str, amend=False):
-        return self.repo.git.commit(message=message, amend=amend)
+    def commit(self, message: str, amend=False, allow_empty=False):
+        return self.repo.git.commit(message=message, amend=amend, allow_empty=allow_empty)
 
     def push(self, all=False):
         try:
