@@ -51,13 +51,12 @@ class FixCommand(CommandInterface):
         super().__init__(command, regex)
 
     def execute(self, args):
-        self.file_watcher.pause()
-        self.setting_file_reader.complete_question(args)
-        self.setting_file_reader.update_completed_questions()
-        self.git_manager.add_all()
-        self.git_manager.commit(f"Fix {args}")
-        self.git_manager.push()
-        self.file_watcher.resume()
+        with self.file_watcher.pause():
+            self.setting_file_reader.complete_question(args)
+            self.setting_file_reader.update_completed_questions()
+            self.git_manager.add_all()
+            self.git_manager.commit(f"Fix {args}")
+            self.git_manager.push(all=True)
 
 
 class ExitCommand(CommandInterface):

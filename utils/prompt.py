@@ -18,7 +18,7 @@ class CommandValidator(Validator):
         if command:
             command.validate(document.text)
         else:
-            raise ValidationError(message='This command is unknown.')
+            raise ValidationError(message='Cette commande est inconnue.')
 
 
 class PromptInterface(ABC):

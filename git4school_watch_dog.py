@@ -71,6 +71,7 @@ if __name__ == "__main__":
                                           settings_file_reader.groups)
 
     if not settings_file_reader.no_watcher:
+        print("Démarrage de l'observateur ...")
         file_watcher.start()
         atexit.register(exit_handler)
 

@@ -11,6 +11,8 @@ watchdog = "==2.1.6"
 GitPython = "==3.1.26"
 pyyaml = "*"
 prompt-toolkit = "*"
+pathspec = "*"
+wcmatch = "*"
 
 [dev-packages]
 pyinstaller = "*"
