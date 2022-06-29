@@ -2,6 +2,8 @@ import atexit
 from pathlib import Path
 from typing import List
 
+from git import GitCommandError
+
 from utils.command import FixCommand, CommandInterface, ExitCommand
 from utils.file_manager import FileManagerGlob
 from utils.file_watcher import FileWatcherWatchdog, FileWatcherInterface
@@ -14,7 +16,10 @@ from utils.settings_file_reader import YAMLSettingsFileReader, \
 
 def open_session(git_manager: GitManagerInterface):
     git_manager.reset("HEAD", hard=True)
-    git_manager.stash(pop=True)
+    try:
+        git_manager.stash(pop=True)
+    except GitCommandError as git_error:
+        print("No stash found!")
 
 
 def exit_handler():
