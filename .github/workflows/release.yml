@@ -86,3 +86,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install pipenv
           #pipenv install --dev
+      - name: Build MacOS executable
+        run: "pipenv run package"
+      - name: Upload MacOS artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_path: ./dist/git4school_watch_dog
+          asset_name: git4school_watch_dog_mac
+          asset_content_type: application/x-executable
