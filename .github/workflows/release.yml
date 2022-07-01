@@ -34,6 +34,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pipenv
+          pip install --upgrade cffi
           pipenv install --dev
       - name: Build Windows executable
         run: "pipenv run package"
@@ -75,7 +76,8 @@ jobs:
 
   build_macos:
     runs-on: macos-latest
-
+    needs: [create_release]
+    
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
@@ -85,7 +87,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pipenv
-          #pipenv install --dev
+          pipenv install --dev
       - name: Build MacOS executable
         run: "pipenv run package"
       - name: Upload MacOS artifact
