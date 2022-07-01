@@ -10,10 +10,13 @@ from utils.settings_file_reader import SettingsFileReaderInterface
 
 
 def find_command(command_str, commands):
+    if (not command_str) or (not command_str.strip()):
+        return None
+
     commands_found = [command for command in commands for command_key in
                       command.command.keys() if
-                      command_key == command_str.split()[0]] \
-        if command_str else None
+                      command_key == command_str.strip().split()[0]]
+
     return commands_found[0] if commands_found else None
 
 

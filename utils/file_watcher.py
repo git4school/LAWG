@@ -1,5 +1,6 @@
 import contextlib
 import os
+import sys
 import time
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -8,6 +9,7 @@ from git import RemoteProgress
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers.polling import PollingObserver as Observer
 
+from utils.file_manager import FileManagerInterface
 from utils.git_manager import GitManagerInterface
 
 
@@ -78,8 +80,11 @@ class GitignoreEventHandler(PatternMatchingEventHandler):
 
 
 class FileWatcherWatchdog(FileWatcherInterface):
-    def __init__(self, folder_to_watch, git_manager: GitManagerInterface):
+    def __init__(self, folder_to_watch, git_manager: GitManagerInterface,
+                 file_manager: FileManagerInterface):
         self.git_manager = git_manager
+        self.folder_to_watch = folder_to_watch
+        self.file_manager = file_manager
         patterns = ["**"]
         ignore_paths = [".git"]
         ignore_directories = True
@@ -106,6 +111,20 @@ class FileWatcherWatchdog(FileWatcherInterface):
         self.git_manager.push(all=True)
         self.observer.stop()
         self.observer.join()
+        self.git_manager.stash(all=True, message="g4s-auto")
+
+        if getattr(sys, 'frozen', False):
+            application_path = os.path.abspath(sys.executable)
+        elif __file__:
+            application_path = os.path.abspath(__file__)
+        else:
+            raise RuntimeError("For some unknown reason, the type of the currently executed file "
+                               "is not recognized.")
+
+        self.file_manager.delete_all(Path(self.folder_to_watch),
+                                     [Path(self.folder_to_watch) / ".git/",
+                                      Path(self.folder_to_watch) / ".settings.yml",
+                                      Path(application_path)])
 
     def on_created(self, event):
         is_diff_empty = self.__is_diff_empty(event)

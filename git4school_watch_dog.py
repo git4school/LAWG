@@ -2,13 +2,24 @@ import atexit
 from pathlib import Path
 from typing import List
 
+from git import GitCommandError
+
 from utils.command import FixCommand, CommandInterface, ExitCommand
+from utils.file_manager import FileManagerGlob
 from utils.file_watcher import FileWatcherWatchdog, FileWatcherInterface
 from utils.git_manager import GitManagerPython, GitManagerInterface
 from utils.prompt import PromptAutocomplete
 from utils.readme_creator import IdentityCreatorDialog
 from utils.settings_file_reader import YAMLSettingsFileReader, \
     SettingsFileReaderInterface
+
+
+def open_session(git_manager: GitManagerInterface):
+    git_manager.reset("HEAD", hard=True)
+    try:
+        git_manager.stash(pop=True)
+    except GitCommandError as git_error:
+        print("No stash found!")
 
 
 def exit_handler():
@@ -59,10 +70,12 @@ def update_gitignore(gitignore_path: Path) -> None:
 if __name__ == "__main__":
     settings_file_reader = YAMLSettingsFileReader()
     read_settings_until_correct(settings_file_reader)
+
     git_manager = GitManagerPython(settings_file_reader.repo_path,
                                    settings_file_reader.ssh_path)
-    file_watcher = FileWatcherWatchdog(settings_file_reader.folder_path,
-                                       git_manager)
+    open_session(git_manager)
+    file_manager = FileManagerGlob()
+    file_watcher = FileWatcherWatchdog(settings_file_reader.folder_path, git_manager, file_manager)
     identity_creator = IdentityCreatorDialog()
 
     update_gitignore(Path(settings_file_reader.repo_path) / ".gitignore")

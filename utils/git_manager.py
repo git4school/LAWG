@@ -34,7 +34,7 @@ class GitManagerInterface(ABC):
         pass
 
     @abstractmethod
-    def add(self, file_path, intent_to_add: bool):
+    def add(self, file_path, intent_to_add: bool = False):
         pass
 
     @abstractmethod
@@ -59,6 +59,10 @@ class GitManagerInterface(ABC):
 
     @abstractmethod
     def get_diff(self, ref: str = None):
+        pass
+
+    @abstractmethod
+    def stash(self, pop: bool = False, all: bool = False, message: str = None):
         pass
 
     @abstractmethod
@@ -119,3 +123,9 @@ class GitManagerPython(GitManagerInterface):
 
     def is_ignored(self, paths) -> bool:
         return bool(self.repo.ignored(paths))
+
+    def stash(self, pop=False, all=False, message=None):
+        if pop:
+            return self.repo.git.stash("pop", all=all, message=message)
+        else:
+            return self.repo.git.stash(all=all, message=message)
