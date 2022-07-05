@@ -127,44 +127,52 @@ class FileWatcherWatchdog(FileWatcherInterface):
                                       Path(application_path)])
 
     def on_created(self, event):
-        is_diff_empty = self.__is_diff_empty(event)
+        src_path = Path(event.src_path)
+        is_diff_empty = self.__is_diff_empty(src_path)
         current_diff = self.git_manager.get_diff()
         if current_diff == self.previous_diff:
-            self.__save(event.src_path, "modified", amend=True)
+            self.__save([src_path], f"[auto] {src_path.name} has been modified", amend=True)
         elif not is_diff_empty:
-            self.__save(event.src_path, event.event_type)
+            self.__save([src_path], f"[auto] {src_path.name} has been created")
         self.__reset_flags()
 
     def on_deleted(self, event):
-        if not self.__is_diff_empty(event):
+        src_path = Path(event.src_path)
+        if not self.__is_diff_empty(src_path):
             self.previous_diff = self.git_manager.get_diff()
-            self.__save(event.src_path, event.event_type)
+            self.__save([src_path], f"[auto] {src_path.name} has been deleted")
 
     def on_modified(self, event):
-        if not self.__is_diff_empty(event):
-            self.__save(event.src_path, event.event_type)
+        src_path = Path(event.src_path)
+        if not self.__is_diff_empty(src_path):
+            self.__save([src_path], f"[auto] {src_path.name} has been modified")
         self.__reset_flags()
 
     def on_moved(self, event):
-        if not self.__is_diff_empty(event):
-            self.__save(event.src_path, event.event_type)
+        src_path = Path(event.src_path)
+        dest_path = Path(event.dest_path)
+        if not self.__is_diff_empty(dest_path):
+            if src_path.parent == dest_path.parent:
+                message = f"[auto] {src_path.name} has been renamed into {dest_path.name}"
+            else:
+                message = f"[auto] {src_path.name} has been moved to {dest_path.parent}"
+            self.__save([Path(event.src_path), Path(event.dest_path)], message)
         self.__reset_flags()
 
-    def __save(self, raw_path: Path, event_type: str, amend=False):
-        path = Path(raw_path)
+    def __save(self, raw_paths: any, message: str, amend=False):
         if "g4s-auto" not in self.git_manager.get_local_branches():
             self.git_manager.branch("g4s-auto")
         self.git_manager.reset("g4s-auto")
-        self.git_manager.add(path)
-        self.git_manager.commit(f"[auto] {path.name} has been {event_type}", amend)
+        [self.git_manager.add(Path(path)) for path in raw_paths]
+        self.git_manager.commit(message, amend)
         self.git_manager.branch("g4s-auto", force=True)
         self.git_manager.reset("HEAD@{2}")
 
     def __reset_flags(self):
         self.previous_diff = None
 
-    def __is_diff_empty(self, event) -> bool:
-        self.git_manager.add(event.src_path, intent_to_add=True)
+    def __is_diff_empty(self, path: Path) -> bool:
+        self.git_manager.add(Path(path), intent_to_add=True)
         return not self.git_manager.get_diff("g4s-auto")
 
     @contextlib.contextmanager
