@@ -101,7 +101,7 @@ class GitManagerPython(GitManagerInterface):
 
     def add(self, file_path, intent_to_add=False):
         path = Path(file_path)
-        return self.repo.git.add(str(path.resolve()), intent_to_add=intent_to_add)
+        return self.repo.git.add(str(path.relative_to(self.repo_path)), intent_to_add=intent_to_add)
 
     def add_all(self):
         return self.repo.git.add(A=True)
