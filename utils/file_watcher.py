@@ -131,21 +131,22 @@ class FileWatcherWatchdog(FileWatcherInterface):
         is_diff_empty = self.__is_diff_empty(src_path)
         current_diff = self.git_manager.get_diff()
         if current_diff == self.previous_diff:
-            self.__save([src_path], f"[auto] {src_path.name} has been modified", amend=True)
+            self.__save([src_path], f"[modified] {src_path.relative_to(self.folder_to_watch)}",
+                        amend=True)
         elif not is_diff_empty:
-            self.__save([src_path], f"[auto] {src_path.name} has been created")
+            self.__save([src_path], f"[created] {src_path.relative_to(self.folder_to_watch)}")
         self.__reset_flags()
 
     def on_deleted(self, event):
         src_path = Path(event.src_path)
         if not self.__is_diff_empty(src_path):
             self.previous_diff = self.git_manager.get_diff()
-            self.__save([src_path], f"[auto] {src_path.name} has been deleted")
+            self.__save([src_path], f"[deleted] {src_path.relative_to(self.folder_to_watch)}")
 
     def on_modified(self, event):
         src_path = Path(event.src_path)
         if not self.__is_diff_empty(src_path):
-            self.__save([src_path], f"[auto] {src_path.name} has been modified")
+            self.__save([src_path], f"[modified] {src_path.relative_to(self.folder_to_watch)}")
         self.__reset_flags()
 
     def on_moved(self, event):
@@ -153,9 +154,11 @@ class FileWatcherWatchdog(FileWatcherInterface):
         dest_path = Path(event.dest_path)
         if not self.__is_diff_empty(dest_path):
             if src_path.parent == dest_path.parent:
-                message = f"[auto] {src_path.name} has been renamed into {dest_path.name}"
+                message = f"[renamed] {src_path.relative_to(self.folder_to_watch)} →" \
+                          f" {dest_path.name}"
             else:
-                message = f"[auto] {src_path.name} has been moved to {dest_path.parent}"
+                message = f"[moved] {src_path.relative_to(self.folder_to_watch)} → " \
+                          f"{dest_path.parent.relative_to(self.folder_to_watch)}"
             self.__save([Path(event.src_path), Path(event.dest_path)], message)
         self.__reset_flags()
 
