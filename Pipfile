@@ -16,10 +16,12 @@ wcmatch = "*"
 
 [dev-packages]
 pywin32-ctypes = { version = "*", sys_platform = "== 'win32'" }
+macholib = { version = "*", sys_platform = "== 'darwin'" }
 pyinstaller = "*"
 pytest = "*"
 bandit = "*"
 prospector = "*"
+
 
 [requires]
 python_version = "3.7"
