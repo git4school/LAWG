@@ -9,6 +9,7 @@ from git import RemoteProgress
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers.polling import PollingObserver as Observer
 
+from utils.constant import AUTO_BRANCH
 from utils.file_manager import FileManagerInterface
 from utils.git_manager import GitManagerInterface
 
@@ -111,7 +112,7 @@ class FileWatcherWatchdog(FileWatcherInterface):
         self.git_manager.push(all=True)
         self.observer.stop()
         self.observer.join()
-        self.git_manager.stash(all=True, message="g4s-auto")
+        self.git_manager.stash(all=True, message=AUTO_BRANCH)
 
         if getattr(sys, 'frozen', False):
             application_path = os.path.abspath(sys.executable)
@@ -163,12 +164,12 @@ class FileWatcherWatchdog(FileWatcherInterface):
         self.__reset_flags()
 
     def __save(self, raw_paths: any, message: str, amend=False):
-        if "g4s-auto" not in self.git_manager.get_local_branches():
-            self.git_manager.branch("g4s-auto")
-        self.git_manager.reset("g4s-auto")
+        if AUTO_BRANCH not in self.git_manager.get_local_branches():
+            self.git_manager.branch(AUTO_BRANCH)
+        self.git_manager.reset(AUTO_BRANCH)
         [self.git_manager.add(Path(path)) for path in raw_paths]
         self.git_manager.commit(message, amend)
-        self.git_manager.branch("g4s-auto", force=True)
+        self.git_manager.branch(AUTO_BRANCH, force=True)
         self.git_manager.reset("HEAD@{2}")
 
     def __reset_flags(self):
@@ -176,7 +177,7 @@ class FileWatcherWatchdog(FileWatcherInterface):
 
     def __is_diff_empty(self, path: Path) -> bool:
         self.git_manager.add(Path(path), intent_to_add=True)
-        return not self.git_manager.get_diff("g4s-auto")
+        return not self.git_manager.get_diff(AUTO_BRANCH)
 
     @contextlib.contextmanager
     def pause(self):

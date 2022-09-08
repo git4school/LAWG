@@ -4,6 +4,7 @@ from sys import exit
 
 from prompt_toolkit.validation import ValidationError
 
+from utils.constant import AUTO_BRANCH
 from utils.file_watcher import FileWatcherInterface
 from utils.git_manager import GitManagerInterface
 from utils.settings_file_reader import SettingsFileReaderInterface
@@ -60,14 +61,14 @@ class FixCommand(CommandInterface):
             self.setting_file_reader.complete_question(args)
             self.setting_file_reader.update_completed_questions()
 
-            if "g4s-auto" not in self.git_manager.get_local_branches():
-                self.git_manager.branch("g4s-auto")
+            if AUTO_BRANCH not in self.git_manager.get_local_branches():
+                self.git_manager.branch(AUTO_BRANCH)
 
             self.git_manager.add_all()
             self.git_manager.commit(commit_message)
-            self.git_manager.reset("g4s-auto")
+            self.git_manager.reset(AUTO_BRANCH)
             self.git_manager.commit(commit_message, allow_empty=True)
-            self.git_manager.branch("g4s-auto", force=True)
+            self.git_manager.branch(AUTO_BRANCH, force=True)
             self.git_manager.reset("HEAD@{2}")
             self.git_manager.push(all=True)
 
