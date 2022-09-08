@@ -55,10 +55,20 @@ class FixCommand(CommandInterface):
 
     def execute(self, args):
         with self.file_watcher.pause():
+            commit_message = f"Fix {args}"
+
             self.setting_file_reader.complete_question(args)
             self.setting_file_reader.update_completed_questions()
+
+            if "g4s-auto" not in self.git_manager.get_local_branches():
+                self.git_manager.branch("g4s-auto")
+
             self.git_manager.add_all()
-            self.git_manager.commit(f"Fix {args}")
+            self.git_manager.commit(commit_message)
+            self.git_manager.reset("g4s-auto")
+            self.git_manager.commit(commit_message, allow_empty=True)
+            self.git_manager.branch("g4s-auto", force=True)
+            self.git_manager.reset("HEAD@{2}")
             self.git_manager.push(all=True)
 
 
