@@ -9,7 +9,7 @@ from git import RemoteProgress
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers.polling import PollingObserver as Observer
 
-from utils.constant import AUTO_BRANCH
+from utils.constant import AUTO_BRANCH, NO_SESSION_CLOSURE
 from utils.file_manager import FileManagerInterface
 from utils.git_manager import GitManagerInterface
 
@@ -107,25 +107,9 @@ class FileWatcherWatchdog(FileWatcherInterface):
         self.observer.start()
 
     def stop(self):
-        self.git_manager.add_all()
-        self.git_manager.commit(f"Pause", allow_empty=True)
-        self.git_manager.push(all=True)
-        self.observer.stop()
-        self.observer.join()
-        self.git_manager.stash(all=True, message=AUTO_BRANCH)
-
-        if getattr(sys, 'frozen', False):
-            application_path = os.path.abspath(sys.executable)
-        elif __file__:
-            application_path = os.path.abspath(__file__)
-        else:
-            raise RuntimeError("For some unknown reason, the type of the currently executed file "
-                               "is not recognized.")
-
-        self.file_manager.delete_all(Path(self.folder_to_watch),
-                                     [Path(self.folder_to_watch) / ".git/",
-                                      Path(self.folder_to_watch) / ".settings.yml",
-                                      Path(application_path)])
+        if self.observer.is_alive():
+            self.observer.stop()
+            self.observer.join()
 
     def on_created(self, event):
         src_path = Path(event.src_path)
