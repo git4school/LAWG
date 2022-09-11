@@ -2,7 +2,7 @@
 
 ## ... install the dependencies
 
-Before doing any operation, you need to have these requirements installed :
+Before doing any operation, you need to have these requirements installed:
 
 - _python 3.7_
 - _pipenv_ installed in the python above
@@ -14,13 +14,13 @@ A list of scripts have been created to help developers develop, but you can exec
 commands from the virtual environment using `pipenv run
 <command>`.
 
-With that done, you can install the dependencies with the following command :
+With that done, you can install the dependencies with the following command:
 
 `pipenv install --dev`
 
-## ... launch the script
+## ... start the script
 
-To launch the script, you can use the following command :
+To launch the script, you can use the following command:
 
 `pipenv run start`
 
@@ -34,20 +34,20 @@ terminal in output console` under `Execution` settings.
 To check the code, we have chosen [prospector](http://prospector.landscape.io/en/master/) which
 packages a bunch of code quality tools and linters.
 
-To run it, you can use the following command :
+To run it, you can use the following command:
 
 `pipenv run lint`
 
 > _Prospector_ reads the file _.prospector.yml_ to configure the checks.
 
 There is also the possibility to run [bandit](https://bandit.readthedocs.io/en/latest/) to check
-security issues :
+security issues:
 
 `pipenv run lint-security`
 
 ## ... run the tests
 
-To run the tests, you can use the following command :
+To run the tests, you can use the following command:
 
 `pipenv run tests`
 
@@ -55,11 +55,21 @@ If you want to run tests besides this command, with an IDE like _PyCharm_, you h
 working directory is the root of the project. On _PyCharm_, you will be able to set the working
 directory in the _run configuration_.
 
-## ... generate the executable file
+## ... generate the executable file ...
 
-To generate a single file executable, you can use the following command :
+To generate a single file executable, you can use the following command:
 
 `pipenv run package`
 
 > To generate the executable, [pyinstaller](https://pyinstaller.readthedocs.io/en/stable/) uses the operating system it's running on.
 > This means that you can only generate a Windows executable file from Windows, etc.
+
+### ... with options
+
+During the generation of the executable, options can be set, as boolean constants in the _utils/constant.py_ file. 
+The different options currently available are the following:
+
+- `NO_WATCHER` : No changes are automatically committed if set to `True`
+- `NO_SESSION_CLOSURE` : The working directory is not closed if set to `True`
+
+> All options are disabled (set to `False`) for the generation of executables available in the [releases](https://github.com/git4school/git4school-automation/releases).
