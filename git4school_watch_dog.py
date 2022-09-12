@@ -45,13 +45,13 @@ def close_session(git_manager: GitManagerInterface, file_manager: FileManagerGlo
                                                         Path(application_path)])
 
 
-def exit_script(git_manager: GitManagerInterface, file_manager: FileManagerGlob, folder_to_watch, __file__):
+def exit_script(git_manager: GitManagerInterface, file_watcher: FileWatcherInterface, file_manager: FileManagerGlob, folder_to_watch, __file__):
     file_watcher.stop()
     close_session(git_manager, file_manager, folder_to_watch, __file__)
 
 
-def exit_handler(git_manager: GitManagerInterface, file_manager: FileManagerGlob, folder_to_watch, __file__):
-    exit_script(git_manager, file_manager, folder_to_watch, __file__)
+def exit_handler(git_manager: GitManagerInterface, file_watcher: FileWatcherInterface, file_manager: FileManagerGlob, folder_to_watch, __file__):
+    exit_script(git_manager, file_watcher, file_manager, folder_to_watch, __file__)
 
 
 def read_settings_until_correct(settings_manager: SettingsFileReaderInterface):
@@ -115,7 +115,7 @@ if __name__ == "__main__":
         print("Démarrage de l'observateur ...")
         file_watcher.start()
 
-    atexit.register(exit_handler, git_manager, file_manager, settings_file_reader.folder_path, __file__)
+    atexit.register(exit_handler, git_manager, file_watcher, file_manager, settings_file_reader.folder_path, __file__)
 
     commands = get_commands_list(settings_file_reader.questions, file_watcher,
                                  git_manager, settings_file_reader)
