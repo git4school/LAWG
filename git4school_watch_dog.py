@@ -24,6 +24,9 @@ def open_session(git_manager: GitManagerInterface):
     except GitCommandError as git_error:
         print("No stash found!")
 
+    git_manager.commit(f"Resume", allow_empty=True)
+    git_manager.push(all=True)
+
 
 def close_session(git_manager: GitManagerInterface, file_manager: FileManagerGlob, folder_to_watch, __file__):
     git_manager.add_all()
