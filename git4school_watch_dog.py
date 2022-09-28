@@ -103,7 +103,7 @@ if __name__ == "__main__":
                                    settings_file_reader.ssh_path)
     open_session(git_manager)
     file_manager = FileManagerGlob()
-    file_watcher = FileWatcherWatchdog(settings_file_reader.folder_path, git_manager, file_manager)
+    file_watcher = FileWatcherWatchdog(settings_file_reader.repo_path, git_manager, file_manager)
     identity_creator = IdentityCreatorDialog()
 
     update_gitignore(Path(settings_file_reader.repo_path) / ".gitignore")
@@ -115,7 +115,7 @@ if __name__ == "__main__":
         print("Démarrage de l'observateur ...")
         file_watcher.start()
 
-    atexit.register(exit_handler, git_manager, file_watcher, file_manager, settings_file_reader.folder_path, __file__)
+    atexit.register(exit_handler, git_manager, file_watcher, file_manager, settings_file_reader.repo_path, __file__)
 
     commands = get_commands_list(settings_file_reader.questions, file_watcher,
                                  git_manager, settings_file_reader)
