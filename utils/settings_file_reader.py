@@ -8,7 +8,6 @@ from . import verify_path
 
 class SettingsFileReaderInterface(ABC):
     def __init__(self):
-        self._folder_path = None
         self._repo_path = None
         self._ssh_path = None
         self._questions = None
@@ -22,15 +21,6 @@ class SettingsFileReaderInterface(ABC):
     @groups.setter
     def groups(self, value):
         self._groups = value
-
-    @property
-    def folder_path(self):
-        return str(self._folder_path)
-
-    @folder_path.setter
-    def folder_path(self, value):
-        path = verify_path(value)
-        self._folder_path = path.resolve(strict=True)
 
     @property
     def repo_path(self):
@@ -102,7 +92,6 @@ class YAMLSettingsFileReader(SettingsFileReaderInterface):
         settings = yaml.load(settings_file, Loader=yaml.FullLoader)
 
         try:
-            self.folder_path = settings["folder_path"]
             self.repo_path = settings["repo_path"]
             self.ssh_path = settings["ssh_path"]
             self.questions = settings["questions"]
@@ -115,8 +104,7 @@ class YAMLSettingsFileReader(SettingsFileReaderInterface):
         return self
 
     def create_settings_file(self):
-        data_template = {'folder_path': ".",
-                         'repo_path': ".",
+        data_template = {'repo_path': ".",
                          'ssh_path': str(Path.home() / '.ssh' / 'id_rsa'),
                          'questions': [],
                          'groups': []}

@@ -65,7 +65,7 @@ class FixCommand(CommandInterface):
                 self.git_manager.branch(AUTO_BRANCH)
 
             self.git_manager.add_all()
-            self.git_manager.commit(commit_message)
+            self.git_manager.commit(commit_message, allow_empty=True)
             self.git_manager.reset(AUTO_BRANCH)
             self.git_manager.commit(commit_message, allow_empty=True)
             self.git_manager.branch(AUTO_BRANCH, force=True)
