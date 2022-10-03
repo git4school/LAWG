@@ -4,7 +4,7 @@ from sys import exit
 
 from prompt_toolkit.validation import ValidationError
 
-from utils.constant import AUTO_BRANCH
+from utils.constant import AUTO_BRANCH, NO_FIX_LIMITATION
 from utils.file_watcher import FileWatcherInterface
 from utils.git_manager import GitManagerInterface
 from utils.settings_file_reader import SettingsFileReaderInterface
@@ -46,7 +46,7 @@ class FixCommand(CommandInterface):
         self.setting_file_reader = setting_file_reader
         self.file_watcher = file_watcher
         questions_regex = f"({'|'.join(self.questions)})"
-        regex = rf'fix *{questions_regex} *$'
+        regex = r'fix .*$' if NO_FIX_LIMITATION else rf'fix *{questions_regex} *$'
 
         questions_dict = dict.fromkeys(self.questions, None)
         command = {
