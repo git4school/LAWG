@@ -30,6 +30,10 @@ class GitManagerInterface(ABC):
         pass
 
     @abstractmethod
+    def duplicate_commit(self, message: str, branch: str, amend=False, allow_empty=False):
+        pass
+
+    @abstractmethod
     def push(self, all: bool):
         pass
 
@@ -90,6 +94,18 @@ class GitManagerPython(GitManagerInterface):
 
     def commit(self, message: str, amend=False, allow_empty=False):
         return self.repo.git.commit(message=message, amend=amend, allow_empty=allow_empty)
+
+    def duplicate_commit(self, message: str, branch: str, amend=False, allow_empty=False):
+        if branch not in self.get_local_branches():
+            self.branch(branch)
+
+        self.add_all()
+        self.commit(message, allow_empty=True)
+        self.reset(branch)
+        self.commit(message, allow_empty=True)
+        self.branch(branch, force=True)
+        self.reset("HEAD@{2}")
+        self.push(all=True)
 
     def push(self, all=False):
         try:

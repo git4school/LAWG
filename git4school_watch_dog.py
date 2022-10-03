@@ -24,14 +24,14 @@ def open_session(git_manager: GitManagerInterface):
     except GitCommandError as git_error:
         print("No stash found!")
 
-    git_manager.commit(f"Resume", allow_empty=True)
-    git_manager.push(all=True)
+    commit_message = f"Resume"
+    git_manager.duplicate_commit(commit_message, AUTO_BRANCH, allow_empty=True)
 
 
 def close_session(git_manager: GitManagerInterface, file_manager: FileManagerGlob, folder_to_watch, __file__):
-    git_manager.add_all()
-    git_manager.commit(f"Pause", allow_empty=True)
-    git_manager.push(all=True)
+    commit_message = f"Pause"
+    git_manager.duplicate_commit(commit_message, AUTO_BRANCH, allow_empty=True)
+
     if not NO_SESSION_CLOSURE:
         git_manager.stash(all=True, message=AUTO_BRANCH)
 

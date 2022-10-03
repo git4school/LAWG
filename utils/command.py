@@ -61,16 +61,7 @@ class FixCommand(CommandInterface):
             self.setting_file_reader.complete_question(args)
             self.setting_file_reader.update_completed_questions()
 
-            if AUTO_BRANCH not in self.git_manager.get_local_branches():
-                self.git_manager.branch(AUTO_BRANCH)
-
-            self.git_manager.add_all()
-            self.git_manager.commit(commit_message, allow_empty=True)
-            self.git_manager.reset(AUTO_BRANCH)
-            self.git_manager.commit(commit_message, allow_empty=True)
-            self.git_manager.branch(AUTO_BRANCH, force=True)
-            self.git_manager.reset("HEAD@{2}")
-            self.git_manager.push(all=True)
+            self.git_manager.duplicate_commit(commit_message, AUTO_BRANCH, allow_empty=True)
 
 
 class ExitCommand(CommandInterface):
