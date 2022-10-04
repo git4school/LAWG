@@ -13,6 +13,15 @@ class SettingsFileReaderInterface(ABC):
         self._questions = None
         self._completed_questions = None
         self._groups = None
+        self._cross_close = None
+
+    @property
+    def cross_close(self):
+        return self._cross_close
+
+    @cross_close.setter
+    def cross_close(self, value):
+        self._cross_close = value
 
     @property
     def groups(self):
@@ -80,6 +89,10 @@ class SettingsFileReaderInterface(ABC):
     def update_completed_questions(self):
         pass
 
+    @abstractmethod
+    def set_cross_close(self, value: bool):
+        pass
+
 
 class YAMLSettingsFileReader(SettingsFileReaderInterface):
     def read(self, path):
@@ -100,6 +113,7 @@ class YAMLSettingsFileReader(SettingsFileReaderInterface):
             raise KeyError(f"{key} is missing from the settings file.")
 
         self.completed_questions = settings.get("completed_questions", [])
+        self.cross_close = settings.get("cross_close", False)
 
         return self
 
@@ -121,6 +135,16 @@ class YAMLSettingsFileReader(SettingsFileReaderInterface):
             settings = yaml.safe_load(file)
 
         settings['completed_questions'] = self.completed_questions
+
+        with open('.settings.yml', 'w') as file:
+            yaml.dump(settings, file)
+
+    def set_cross_close(self, value: bool):
+        self.cross_close = value
+        with open('.settings.yml') as file:
+            settings = yaml.safe_load(file)
+
+        settings['cross_close'] = self.cross_close
 
         with open('.settings.yml', 'w') as file:
             yaml.dump(settings, file)

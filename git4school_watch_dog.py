@@ -17,8 +17,13 @@ from utils.settings_file_reader import YAMLSettingsFileReader, \
     SettingsFileReaderInterface
 
 
-def open_session(git_manager: GitManagerInterface):
-    git_manager.reset("HEAD", hard=True)
+def open_session(git_manager: GitManagerInterface, settings_file_reader: SettingsFileReaderInterface):
+    cross_close = settings_file_reader.cross_close
+    print(cross_close)
+
+    if not cross_close:
+        git_manager.reset("HEAD", hard=True)
+
     try:
         git_manager.stash(pop=True)
     except GitCommandError as git_error:
@@ -26,9 +31,10 @@ def open_session(git_manager: GitManagerInterface):
 
     commit_message = f"Resume"
     git_manager.duplicate_commit(commit_message, AUTO_BRANCH, allow_empty=True)
+    settings_file_reader.set_cross_close(True)
 
 
-def close_session(git_manager: GitManagerInterface, file_manager: FileManagerGlob, folder_to_watch, __file__):
+def close_session(git_manager: GitManagerInterface, file_manager: FileManagerGlob, folder_to_watch, __file__, settings_file_reader: SettingsFileReaderInterface):
     commit_message = f"Pause"
     git_manager.duplicate_commit(commit_message, AUTO_BRANCH, allow_empty=True)
 
@@ -47,14 +53,16 @@ def close_session(git_manager: GitManagerInterface, file_manager: FileManagerGlo
                                                         Path(folder_to_watch) / ".settings.yml",
                                                         Path(application_path)])
 
+    settings_file_reader.set_cross_close(False)
 
-def exit_script(git_manager: GitManagerInterface, file_watcher: FileWatcherInterface, file_manager: FileManagerGlob, folder_to_watch, __file__):
+
+def exit_script(git_manager: GitManagerInterface, file_watcher: FileWatcherInterface, file_manager: FileManagerGlob, folder_to_watch, __file__, settings_file_reader: SettingsFileReaderInterface):
     file_watcher.stop()
-    close_session(git_manager, file_manager, folder_to_watch, __file__)
+    close_session(git_manager, file_manager, folder_to_watch, __file__, settings_file_reader)
 
 
-def exit_handler(git_manager: GitManagerInterface, file_watcher: FileWatcherInterface, file_manager: FileManagerGlob, folder_to_watch, __file__):
-    exit_script(git_manager, file_watcher, file_manager, folder_to_watch, __file__)
+def exit_handler(git_manager: GitManagerInterface, file_watcher: FileWatcherInterface, file_manager: FileManagerGlob, folder_to_watch, __file__, settings_file_reader: SettingsFileReaderInterface):
+    exit_script(git_manager, file_watcher, file_manager, folder_to_watch, __file__, settings_file_reader)
 
 
 def read_settings_until_correct(settings_manager: SettingsFileReaderInterface):
@@ -104,7 +112,7 @@ if __name__ == "__main__":
 
     git_manager = GitManagerPython(settings_file_reader.repo_path,
                                    settings_file_reader.ssh_path)
-    open_session(git_manager)
+    open_session(git_manager, settings_file_reader)
     file_manager = FileManagerGlob()
     file_watcher = FileWatcherWatchdog(settings_file_reader.repo_path, git_manager, file_manager)
     identity_creator = IdentityCreatorDialog()
@@ -118,7 +126,7 @@ if __name__ == "__main__":
         print("Démarrage de l'observateur ...")
         file_watcher.start()
 
-    atexit.register(exit_handler, git_manager, file_watcher, file_manager, settings_file_reader.repo_path, __file__)
+    atexit.register(exit_handler, git_manager, file_watcher, file_manager, settings_file_reader.repo_path, __file__, settings_file_reader)
 
     commands = get_commands_list(settings_file_reader.questions, file_watcher,
                                  git_manager, settings_file_reader)
