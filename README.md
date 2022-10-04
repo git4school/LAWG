@@ -71,5 +71,6 @@ The different options currently available are the following:
 
 - `NO_WATCHER` : No changes are automatically committed if set to `True`
 - `NO_SESSION_CLOSURE` : The working directory is not closed if set to `True`
+- `NO_FIX_LIMITATION` : Unlisted questions can be used with the command `Fix` if set to `True`
 
 > All options are disabled (set to `False`) for the generation of executables available in the [releases](https://github.com/git4school/git4school-automation/releases).
