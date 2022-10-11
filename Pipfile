@@ -22,7 +22,7 @@ pyinstaller = "*"
 pytest = "*"
 bandit = "*"
 prospector = "*"
-
+pylint = "*"
 
 [requires]
 python_version = "3.7"

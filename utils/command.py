@@ -5,9 +5,10 @@ from sys import exit
 from prompt_toolkit.validation import ValidationError
 
 from utils.constant import AUTO_BRANCH, NO_FIX_LIMITATION
+from utils.data_file_manager import DataFileManagerInterface
 from utils.file_watcher import FileWatcherInterface
 from utils.git_manager import GitManagerInterface
-from utils.settings_file_reader import SettingsFileReaderInterface
+from utils.config_file_manager import ConfigFileManagerInterface
 
 
 def find_command(command_str, commands):
@@ -39,11 +40,11 @@ class CommandInterface(ABC):
 class FixCommand(CommandInterface):
     def __init__(self, questions,
                  git_manager: GitManagerInterface,
-                 setting_file_reader: SettingsFileReaderInterface,
+                 data_file_manager: DataFileManagerInterface,
                  file_watcher: FileWatcherInterface):
         self.questions = questions
         self.git_manager = git_manager
-        self.setting_file_reader = setting_file_reader
+        self.data_file_manager = data_file_manager
         self.file_watcher = file_watcher
         questions_regex = f"({'|'.join(self.questions)})"
         regex = r'fix .*$' if NO_FIX_LIMITATION else rf'fix *{questions_regex} *$'
@@ -58,8 +59,7 @@ class FixCommand(CommandInterface):
         with self.file_watcher.pause():
             commit_message = f"Fix {args}"
 
-            self.setting_file_reader.complete_question(args)
-            self.setting_file_reader.update_completed_questions()
+            self.data_file_manager.complete_question(args)
 
             self.git_manager.duplicate_commit(commit_message, AUTO_BRANCH, allow_empty=True)
 
