@@ -7,7 +7,7 @@ from typing import List
 from git import GitCommandError
 
 from utils.command import FixCommand, CommandInterface, ExitCommand
-from utils.constant import NO_WATCHER, NO_SESSION_CLOSURE, AUTO_BRANCH
+from utils.constant import NO_WATCHER, NO_SESSION_CLOSURE, AUTO_BRANCH, CONFIG_FILE_NAME, DATA_FILE_NAME
 from utils.data_file_manager import PickleDataFileManager, DataFileManagerInterface
 from utils.file_manager import FileManagerGlob
 from utils.file_watcher import FileWatcherWatchdog, FileWatcherInterface
@@ -51,7 +51,8 @@ def close_session(git_manager: GitManagerInterface, file_manager: FileManagerGlo
                                "is not recognized.")
 
         file_manager.delete_all(Path(folder_to_watch), [Path(folder_to_watch) / ".git/",
-                                                        Path(folder_to_watch) / ".settings.yml",
+                                                        Path(folder_to_watch) / CONFIG_FILE_NAME,
+                                                        Path(folder_to_watch) / DATA_FILE_NAME,
                                                         Path(application_path)])
 
     data_file_manager.set_cross_close(False)
@@ -68,22 +69,22 @@ def exit_handler(git_manager: GitManagerInterface, file_watcher: FileWatcherInte
 
 def read_settings_until_correct(config_file_manager: ConfigFileManagerInterface):
     try:
-        config_file_manager.load(".settings.yml")
+        config_file_manager.load(CONFIG_FILE_NAME)
     except FileNotFoundError as e:
         config_file_manager.create_config_file()
         input(
-            "The file '.settings.yml' was created. "
+            f"The file '{CONFIG_FILE_NAME}' was created. "
             "Please fill it with the correct data and press enter to continue.")
         read_settings_until_correct(config_file_manager)
     except ValueError as e:
         print(e)
         input(
-            "Please correct the path '.settings.yml' and press enter to continue.")
+            f"Please correct the path '{CONFIG_FILE_NAME}' and press enter to continue.")
         read_settings_until_correct(config_file_manager)
     except KeyError as e:
         print(e)
         input(
-            "Please fill the file '.settings.yml' with the correct data "
+            f"Please fill the file '{CONFIG_FILE_NAME}' with the correct data "
             "and press enter to continue.")
         read_settings_until_correct(config_file_manager)
 
@@ -111,7 +112,7 @@ if __name__ == "__main__":
     file_manager = FileManagerGlob()
     config = YAMLConfigFileManager(file_manager)
     read_settings_until_correct(config)
-    data_file_manager = PickleDataFileManager(file_manager, Path(config.repo_path) / ".variables.dat", config.questions)
+    data_file_manager = PickleDataFileManager(file_manager, Path(config.repo_path) / DATA_FILE_NAME, config.questions)
     git_manager = GitManagerPython(config.repo_path,
                                    config.ssh_path)
 

@@ -4,6 +4,7 @@ from pathlib import Path
 import yaml
 
 from . import verify_path
+from .constant import CONFIG_FILE_NAME
 from .file_manager import FileManagerInterface
 
 
@@ -130,5 +131,5 @@ class YAMLConfigFileManager(ConfigFileManagerInterface):
                          'ssh_path': str(Path.home() / '.ssh' / 'id_rsa'),
                          'questions': [],
                          'groups': []}
-        with self.file_manager.open('.settings.yml', 'w') as file:
+        with self.file_manager.open(CONFIG_FILE_NAME, 'w') as file:
             yaml.dump(data_template, file)
