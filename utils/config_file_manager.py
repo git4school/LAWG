@@ -4,14 +4,15 @@ from pathlib import Path
 import yaml
 
 from . import verify_path
+from .constant import CONFIG_FILE_NAME
+from .file_manager import FileManagerInterface
 
 
-class SettingsFileReaderInterface(ABC):
+class Config:
     def __init__(self):
         self._repo_path = None
         self._ssh_path = None
         self._questions = None
-        self._completed_questions = None
         self._groups = None
 
     @property
@@ -40,14 +41,6 @@ class SettingsFileReaderInterface(ABC):
         self._questions = value
 
     @property
-    def completed_questions(self):
-        return self._completed_questions
-
-    @completed_questions.setter
-    def completed_questions(self, value):
-        self._completed_questions = value
-
-    @property
     def ssh_path(self):
         return str(self._ssh_path)
 
@@ -56,33 +49,65 @@ class SettingsFileReaderInterface(ABC):
         path = verify_path(value)
         self._ssh_path = path.resolve(strict=True)
 
+
+class ConfigFileManagerInterface(ABC):
+    def __init__(self, file_manager: FileManagerInterface):
+        self.config = Config()
+        self.file_manager = file_manager
+
     @abstractmethod
-    def read(self, path):
+    def load(self, path) -> Config:
         """
-        Reads the settings file.
+        Reads the config file.
         param path:
-        :return:
+        :return: the config parameters
         """
         pass
 
     @abstractmethod
-    def create_settings_file(self):
+    def create_config_file(self):
         """
-        Creates the settings file.
+        Creates the config file.
         """
         pass
 
-    @abstractmethod
-    def complete_question(self, question):
-        pass
+    @property
+    def groups(self):
+        return self.config.groups
 
-    @abstractmethod
-    def update_completed_questions(self):
-        pass
+    @groups.setter
+    def groups(self, value):
+        self.config.groups = value
+
+    @property
+    def repo_path(self):
+        return str(self.config.repo_path)
+
+    @repo_path.setter
+    def repo_path(self, value):
+        path = verify_path(value)
+        self.config.repo_path = path.resolve(strict=True)
+
+    @property
+    def questions(self):
+        return self.config.questions
+
+    @questions.setter
+    def questions(self, value):
+        self.config.questions = value
+
+    @property
+    def ssh_path(self):
+        return str(self.config.ssh_path)
+
+    @ssh_path.setter
+    def ssh_path(self, value):
+        path = verify_path(value)
+        self.config.ssh_path = path.resolve(strict=True)
 
 
-class YAMLSettingsFileReader(SettingsFileReaderInterface):
-    def read(self, path):
+class YAMLConfigFileManager(ConfigFileManagerInterface):
+    def load(self, path):
         try:
             path = verify_path(path)
         except ValueError as ve:
@@ -99,28 +124,12 @@ class YAMLSettingsFileReader(SettingsFileReaderInterface):
         except KeyError as key:
             raise KeyError(f"{key} is missing from the settings file.")
 
-        self.completed_questions = settings.get("completed_questions", [])
-
         return self
 
-    def create_settings_file(self):
+    def create_config_file(self):
         data_template = {'repo_path': ".",
                          'ssh_path': str(Path.home() / '.ssh' / 'id_rsa'),
                          'questions': [],
                          'groups': []}
-        with open('.settings.yml', 'w') as file:
+        with self.file_manager.open(CONFIG_FILE_NAME, 'w') as file:
             yaml.dump(data_template, file)
-
-    def complete_question(self, question):
-        if question in self.questions \
-                and question not in self.completed_questions:
-            self.completed_questions.append(question)
-
-    def update_completed_questions(self):
-        with open('.settings.yml') as file:
-            settings = yaml.safe_load(file)
-
-        settings['completed_questions'] = self.completed_questions
-
-        with open('.settings.yml', 'w') as file:
-            yaml.dump(settings, file)

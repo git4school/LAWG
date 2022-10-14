@@ -1,11 +1,13 @@
 import pytest
 
-from utils.settings_file_reader import YAMLSettingsFileReader
+from utils.config_file_manager import YAMLConfigFileManager
+from utils.file_manager import FileManagerGlob
 
 
 @pytest.fixture
 def yaml_sfr():
-    return YAMLSettingsFileReader()
+    fm = FileManagerGlob()
+    return YAMLConfigFileManager(fm)
 
 
 def test_set_valid_repo_path(yaml_sfr):

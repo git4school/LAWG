@@ -7,18 +7,24 @@ from typing import List
 from git import GitCommandError
 
 from utils.command import FixCommand, CommandInterface, ExitCommand
-from utils.constant import NO_WATCHER, NO_SESSION_CLOSURE, AUTO_BRANCH
+from utils.constant import NO_WATCHER, NO_SESSION_CLOSURE, AUTO_BRANCH, CONFIG_FILE_NAME, DATA_FILE_NAME
+from utils.data_file_manager import PickleDataFileManager, DataFileManagerInterface
 from utils.file_manager import FileManagerGlob
 from utils.file_watcher import FileWatcherWatchdog, FileWatcherInterface
 from utils.git_manager import GitManagerPython, GitManagerInterface
 from utils.prompt import PromptAutocomplete
 from utils.readme_creator import IdentityCreatorDialog
-from utils.settings_file_reader import YAMLSettingsFileReader, \
-    SettingsFileReaderInterface
+from utils.config_file_manager import YAMLConfigFileManager, \
+    ConfigFileManagerInterface
 
 
-def open_session(git_manager: GitManagerInterface):
-    git_manager.reset("HEAD", hard=True)
+def open_session(git_manager: GitManagerInterface, data_file_manager: DataFileManagerInterface):
+    cross_close = data_file_manager.cross_close
+    print(cross_close)
+
+    if not cross_close:
+        git_manager.reset("HEAD", hard=True)
+
     try:
         git_manager.stash(pop=True)
     except GitCommandError as git_error:
@@ -26,9 +32,10 @@ def open_session(git_manager: GitManagerInterface):
 
     commit_message = f"Resume"
     git_manager.duplicate_commit(commit_message, AUTO_BRANCH, allow_empty=True)
+    data_file_manager.set_cross_close(True)
 
 
-def close_session(git_manager: GitManagerInterface, file_manager: FileManagerGlob, folder_to_watch, __file__):
+def close_session(git_manager: GitManagerInterface, file_manager: FileManagerGlob, folder_to_watch, __file__, data_file_manager: DataFileManagerInterface):
     commit_message = f"Pause"
     git_manager.duplicate_commit(commit_message, AUTO_BRANCH, allow_empty=True)
 
@@ -44,47 +51,50 @@ def close_session(git_manager: GitManagerInterface, file_manager: FileManagerGlo
                                "is not recognized.")
 
         file_manager.delete_all(Path(folder_to_watch), [Path(folder_to_watch) / ".git/",
-                                                        Path(folder_to_watch) / ".settings.yml",
+                                                        Path(folder_to_watch) / CONFIG_FILE_NAME,
+                                                        Path(folder_to_watch) / DATA_FILE_NAME,
                                                         Path(application_path)])
 
+    data_file_manager.set_cross_close(False)
 
-def exit_script(git_manager: GitManagerInterface, file_watcher: FileWatcherInterface, file_manager: FileManagerGlob, folder_to_watch, __file__):
+
+def exit_script(git_manager: GitManagerInterface, file_watcher: FileWatcherInterface, file_manager: FileManagerGlob, folder_to_watch, __file__, data_file_manager: DataFileManagerInterface):
     file_watcher.stop()
-    close_session(git_manager, file_manager, folder_to_watch, __file__)
+    close_session(git_manager, file_manager, folder_to_watch, __file__, data_file_manager)
 
 
-def exit_handler(git_manager: GitManagerInterface, file_watcher: FileWatcherInterface, file_manager: FileManagerGlob, folder_to_watch, __file__):
-    exit_script(git_manager, file_watcher, file_manager, folder_to_watch, __file__)
+def exit_handler(git_manager: GitManagerInterface, file_watcher: FileWatcherInterface, file_manager: FileManagerGlob, folder_to_watch, __file__, data_file_manager: DataFileManagerInterface):
+    exit_script(git_manager, file_watcher, file_manager, folder_to_watch, __file__, data_file_manager)
 
 
-def read_settings_until_correct(settings_manager: SettingsFileReaderInterface):
+def read_settings_until_correct(config_file_manager: ConfigFileManagerInterface):
     try:
-        settings_manager.read(".settings.yml")
+        config_file_manager.load(CONFIG_FILE_NAME)
     except FileNotFoundError as e:
-        settings_manager.create_settings_file()
+        config_file_manager.create_config_file()
         input(
-            "The file '.settings.yml' was created. "
+            f"The file '{CONFIG_FILE_NAME}' was created. "
             "Please fill it with the correct data and press enter to continue.")
-        read_settings_until_correct(settings_manager)
+        read_settings_until_correct(config_file_manager)
     except ValueError as e:
         print(e)
         input(
-            "Please correct the path '.settings.yml' and press enter to continue.")
-        read_settings_until_correct(settings_manager)
+            f"Please correct the path '{CONFIG_FILE_NAME}' and press enter to continue.")
+        read_settings_until_correct(config_file_manager)
     except KeyError as e:
         print(e)
         input(
-            "Please fill the file '.settings.yml' with the correct data "
+            f"Please fill the file '{CONFIG_FILE_NAME}' with the correct data "
             "and press enter to continue.")
-        read_settings_until_correct(settings_manager)
+        read_settings_until_correct(config_file_manager)
 
 
 def get_commands_list(questions: List[str],
                       file_watcher_manager: FileWatcherInterface,
                       git_service: GitManagerInterface,
-                      setting_file_reader: SettingsFileReaderInterface) \
+                      data_file_manager: DataFileManagerInterface) \
         -> List[CommandInterface]:
-    fix_command = FixCommand(questions, git_service, setting_file_reader,
+    fix_command = FixCommand(questions, git_service, data_file_manager,
                              file_watcher_manager)
     exit_command = ExitCommand(file_watcher_manager)
     return [fix_command, exit_command]
@@ -99,29 +109,30 @@ def update_gitignore(gitignore_path: Path) -> None:
 
 
 if __name__ == "__main__":
-    settings_file_reader = YAMLSettingsFileReader()
-    read_settings_until_correct(settings_file_reader)
-
-    git_manager = GitManagerPython(settings_file_reader.repo_path,
-                                   settings_file_reader.ssh_path)
-    open_session(git_manager)
     file_manager = FileManagerGlob()
-    file_watcher = FileWatcherWatchdog(settings_file_reader.repo_path, git_manager, file_manager)
+    config = YAMLConfigFileManager(file_manager)
+    read_settings_until_correct(config)
+    data_file_manager = PickleDataFileManager(file_manager, Path(config.repo_path) / DATA_FILE_NAME, config.questions)
+    git_manager = GitManagerPython(config.repo_path,
+                                   config.ssh_path)
+
+    open_session(git_manager, data_file_manager)
+
+    file_watcher = FileWatcherWatchdog(config.repo_path, git_manager, file_manager)
     identity_creator = IdentityCreatorDialog()
 
-    update_gitignore(Path(settings_file_reader.repo_path) / ".gitignore")
+    update_gitignore(Path(config.repo_path) / ".gitignore")
 
-    identity_creator.create_identity_file(settings_file_reader.repo_path,
-                                          settings_file_reader.groups)
+    identity_creator.create_identity_file(config.repo_path,
+                                          config.groups)
 
     if not NO_WATCHER:
         print("Démarrage de l'observateur ...")
         file_watcher.start()
 
-    atexit.register(exit_handler, git_manager, file_watcher, file_manager, settings_file_reader.repo_path, __file__)
+    atexit.register(exit_handler, git_manager, file_watcher, file_manager, config.repo_path, __file__, data_file_manager)
 
-    commands = get_commands_list(settings_file_reader.questions, file_watcher,
-                                 git_manager, settings_file_reader)
+    commands = get_commands_list(config.questions, file_watcher, git_manager, data_file_manager)
     command_prompt = PromptAutocomplete(commands)
 
     try:
