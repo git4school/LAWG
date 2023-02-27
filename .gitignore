@@ -1,5 +1,6 @@
 .idea
 .fleet
+.DS_Store
 
 # Files generated with pyinstaller
 dist

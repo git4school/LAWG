@@ -29,7 +29,7 @@ python_version = "3.9"
 
 [scripts]
 start = "python git4school_watch_dog.py"
-package = "pyinstaller --paths=utils --onefile --noupx git4school_watch_dog.py"
+package = "pyinstaller --onefile --noupx git4school_watch_dog.py"
 lint = "prospector"
 lint-security = "bandit -r ."
 tests = "pytest -v"
