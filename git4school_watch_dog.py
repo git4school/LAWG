@@ -20,7 +20,6 @@ from utils.config_file_manager import YAMLConfigFileManager, \
 
 def open_session(git_manager: GitManagerInterface, data_file_manager: DataFileManagerInterface):
     cross_close = data_file_manager.cross_close
-    print(cross_close)
 
     if not cross_close:
         git_manager.reset("HEAD", hard=True)
@@ -109,6 +108,8 @@ def update_gitignore(gitignore_path: Path) -> None:
 
 
 if __name__ == "__main__":
+    if getattr(sys, 'frozen', False):
+        os.chdir(Path(sys.executable).parent)
     file_manager = FileManagerGlob()
     config = YAMLConfigFileManager(file_manager)
     read_settings_until_correct(config)
