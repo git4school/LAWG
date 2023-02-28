@@ -117,18 +117,18 @@ class YAMLConfigFileManager(ConfigFileManagerInterface):
         settings = yaml.load(settings_file, Loader=yaml.FullLoader)
 
         try:
-            self.repo_path = settings["repo_path"]
             self.ssh_path = settings["ssh_path"]
             self.questions = settings["questions"]
             self.groups = settings["groups"]
         except KeyError as key:
             raise KeyError(f"{key} is missing from the settings file.")
 
+        self.repo_path = settings.get("repo_path", ".")
+
         return self
 
     def create_config_file(self):
-        data_template = {'repo_path': ".",
-                         'ssh_path': str(Path.home() / '.ssh' / 'id_rsa'),
+        data_template = {'ssh_path': str(Path.home() / '.ssh' / 'id_rsa'),
                          'questions': [],
                          'groups': []}
         with self.file_manager.open(CONFIG_FILE_NAME, 'w') as file:
