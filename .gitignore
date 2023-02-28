@@ -8,4 +8,5 @@ build
 __pycache__
 
 # config files for the script
+.settings.yml
 settings.yml
