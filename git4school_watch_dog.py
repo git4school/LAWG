@@ -7,7 +7,8 @@ from typing import List
 from git import GitCommandError
 
 from utils.command import FixCommand, CommandInterface, ExitCommand
-from utils.constant import NO_WATCHER, NO_SESSION_CLOSURE, AUTO_BRANCH, CONFIG_FILE_NAME, DATA_FILE_NAME
+from utils.constant import NO_WATCHER, NO_SESSION_CLOSURE, AUTO_BRANCH, CONFIG_FILE_NAME, DATA_FILE_NAME, \
+    IDENTITY_FILE_NAME
 from utils.data_file_manager import PickleDataFileManager, DataFileManagerInterface
 from utils.file_manager import FileManagerGlob
 from utils.file_watcher import FileWatcherWatchdog, FileWatcherInterface
@@ -42,9 +43,9 @@ def close_session(git_manager: GitManagerInterface, file_manager: FileManagerGlo
         git_manager.stash(all=True, message=AUTO_BRANCH)
 
         if getattr(sys, 'frozen', False):
-            application_path = os.path.abspath(sys.executable)
+            application_path = Path(sys.executable)
         elif __file__:
-            application_path = os.path.abspath(__file__)
+            application_path = Path(__file__)
         else:
             raise RuntimeError("For some unknown reason, the type of the currently executed file "
                                "is not recognized.")
@@ -52,6 +53,7 @@ def close_session(git_manager: GitManagerInterface, file_manager: FileManagerGlo
         file_manager.delete_all(Path(folder_to_watch), [Path(folder_to_watch) / ".git/",
                                                         Path(folder_to_watch) / CONFIG_FILE_NAME,
                                                         Path(folder_to_watch) / DATA_FILE_NAME,
+                                                        Path(folder_to_watch) / IDENTITY_FILE_NAME,
                                                         Path(application_path)])
 
     data_file_manager.set_cross_close(False)
