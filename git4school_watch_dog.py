@@ -27,8 +27,14 @@ def open_session(git_manager: GitManagerInterface, data_file_manager: DataFileMa
 
     try:
         git_manager.stash(pop=True)
-    except GitCommandError as git_error:
+    except GitCommandError as stash_error:
         print("No stash found!")
+
+    try:
+        git_manager.pull()
+    except GitCommandError as pull_error:
+        print("An error as occurred when pulling, please resolve the conflict if any!")
+        input()
 
     commit_message = f"Resume"
     git_manager.duplicate_commit(commit_message, AUTO_BRANCH, allow_empty=True)
