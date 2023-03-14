@@ -19,7 +19,7 @@ from utils.config_file_manager import YAMLConfigFileManager, \
     ConfigFileManagerInterface
 
 
-def open_session(git_manager: GitManagerInterface, data_file_manager: DataFileManagerInterface):
+def open_session(git_manager: GitManagerInterface, __file__, data_file_manager: DataFileManagerInterface):
     cross_close = data_file_manager.cross_close
 
     if not cross_close:
@@ -31,10 +31,12 @@ def open_session(git_manager: GitManagerInterface, data_file_manager: DataFileMa
         print("No stash found!")
 
     try:
-        git_manager.pull()
+        code = git_manager.pull()
     except GitCommandError as pull_error:
-        print("An error as occurred when pulling, please resolve the conflict if any!")
-        input()
+        print("An error as occurred when pulling, aborting the merge...")
+        git_manager.merge(abort=True)
+        print("The program will be stop, please contact your supervisor to handle the problem manually.")
+        raise
 
     commit_message = f"Resume"
     git_manager.duplicate_commit(commit_message, AUTO_BRANCH, allow_empty=True)
@@ -125,7 +127,7 @@ if __name__ == "__main__":
     git_manager = GitManagerPython(config.repo_path,
                                    config.ssh_path)
 
-    open_session(git_manager, data_file_manager)
+    open_session(git_manager, __file__, data_file_manager)
 
     file_watcher = FileWatcherWatchdog(config.repo_path, git_manager, file_manager)
     identity_creator = IdentityCreatorDialog()

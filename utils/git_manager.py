@@ -79,6 +79,10 @@ class GitManagerInterface(ABC):
     def is_ignored(self, paths) -> bool:
         pass
 
+    @abstractmethod
+    def merge(self, abort=False):
+        pass
+
 
 class GitManagerPython(GitManagerInterface):
     def __init__(self, repo_path, ssh_path):
@@ -114,10 +118,7 @@ class GitManagerPython(GitManagerInterface):
         self.push(all=True)
 
     def pull(self):
-        try:
-            self.remote.pull()
-        except Exception as e:
-            print(e)
+        self.remote.pull()
 
     def push(self, all=False):
         try:
@@ -157,3 +158,6 @@ class GitManagerPython(GitManagerInterface):
             return self.repo.git.stash("pop", all=all, message=message)
         else:
             return self.repo.git.stash(all=all, message=message)
+
+    def merge(self, abort=False):
+        self.repo.git.merge(abort=abort)
