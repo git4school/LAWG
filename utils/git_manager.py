@@ -3,6 +3,8 @@ from pathlib import Path
 
 from git import Repo
 
+from utils.constant import REMOTE_NAME
+
 
 class GitManagerInterface(ABC):
     def __init__(self, repo_path, ssh_path):
@@ -31,6 +33,10 @@ class GitManagerInterface(ABC):
 
     @abstractmethod
     def duplicate_commit(self, message: str, branch: str, amend=False, allow_empty=False):
+        pass
+
+    @abstractmethod
+    def pull(self):
         pass
 
     @abstractmethod
@@ -73,12 +79,16 @@ class GitManagerInterface(ABC):
     def is_ignored(self, paths) -> bool:
         pass
 
+    @abstractmethod
+    def merge(self, abort=False):
+        pass
+
 
 class GitManagerPython(GitManagerInterface):
     def __init__(self, repo_path, ssh_path):
         super().__init__(repo_path, ssh_path)
         self.repo = Repo(repo_path)
-        self.origin = self.repo.remote(name="origin")
+        self.remote = self.repo.remote(name=REMOTE_NAME)
 
     def checkout(self, branch: str):
         return self.repo.git.checkout(branch)
@@ -107,11 +117,14 @@ class GitManagerPython(GitManagerInterface):
         self.reset("HEAD@{2}")
         self.push(all=True)
 
+    def pull(self):
+        self.remote.pull()
+
     def push(self, all=False):
         try:
             ssh_cmd = f'ssh -v -i {self.ssh_path}'
             with self.repo.git.custom_environment(GIT_SSH_COMMAND=ssh_cmd):
-                return self.origin.push(all=all)  # progress=MyProgressPrinter())
+                return self.remote.push(all=all)  # progress=MyProgressPrinter())
         except Exception as e:
             print(e)
 
@@ -145,3 +158,6 @@ class GitManagerPython(GitManagerInterface):
             return self.repo.git.stash("pop", all=all, message=message)
         else:
             return self.repo.git.stash(all=all, message=message)
+
+    def merge(self, abort=False):
+        self.repo.git.merge(abort=abort)

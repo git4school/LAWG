@@ -7,7 +7,8 @@ from typing import List
 from git import GitCommandError
 
 from utils.command import FixCommand, CommandInterface, ExitCommand
-from utils.constant import NO_WATCHER, NO_SESSION_CLOSURE, AUTO_BRANCH, CONFIG_FILE_NAME, DATA_FILE_NAME
+from utils.constant import NO_WATCHER, NO_SESSION_CLOSURE, AUTO_BRANCH, CONFIG_FILE_NAME, DATA_FILE_NAME, \
+    IDENTITY_FILE_NAME
 from utils.data_file_manager import PickleDataFileManager, DataFileManagerInterface
 from utils.file_manager import FileManagerGlob
 from utils.file_watcher import FileWatcherWatchdog, FileWatcherInterface
@@ -18,7 +19,7 @@ from utils.config_file_manager import YAMLConfigFileManager, \
     ConfigFileManagerInterface
 
 
-def open_session(git_manager: GitManagerInterface, data_file_manager: DataFileManagerInterface):
+def open_session(git_manager: GitManagerInterface, __file__, data_file_manager: DataFileManagerInterface):
     cross_close = data_file_manager.cross_close
 
     if not cross_close:
@@ -26,8 +27,16 @@ def open_session(git_manager: GitManagerInterface, data_file_manager: DataFileMa
 
     try:
         git_manager.stash(pop=True)
-    except GitCommandError as git_error:
+    except GitCommandError as stash_error:
         print("No stash found!")
+
+    try:
+        code = git_manager.pull()
+    except GitCommandError as pull_error:
+        print("An error as occurred when pulling, aborting the merge...")
+        git_manager.merge(abort=True)
+        print("The program will be stop, please contact your supervisor to handle the problem manually.")
+        raise
 
     commit_message = f"Resume"
     git_manager.duplicate_commit(commit_message, AUTO_BRANCH, allow_empty=True)
@@ -42,9 +51,9 @@ def close_session(git_manager: GitManagerInterface, file_manager: FileManagerGlo
         git_manager.stash(all=True, message=AUTO_BRANCH)
 
         if getattr(sys, 'frozen', False):
-            application_path = os.path.abspath(sys.executable)
+            application_path = Path(sys.executable)
         elif __file__:
-            application_path = os.path.abspath(__file__)
+            application_path = Path(__file__)
         else:
             raise RuntimeError("For some unknown reason, the type of the currently executed file "
                                "is not recognized.")
@@ -52,6 +61,7 @@ def close_session(git_manager: GitManagerInterface, file_manager: FileManagerGlo
         file_manager.delete_all(Path(folder_to_watch), [Path(folder_to_watch) / ".git/",
                                                         Path(folder_to_watch) / CONFIG_FILE_NAME,
                                                         Path(folder_to_watch) / DATA_FILE_NAME,
+                                                        Path(folder_to_watch) / IDENTITY_FILE_NAME,
                                                         Path(application_path)])
 
     data_file_manager.set_cross_close(False)
@@ -117,7 +127,7 @@ if __name__ == "__main__":
     git_manager = GitManagerPython(config.repo_path,
                                    config.ssh_path)
 
-    open_session(git_manager, data_file_manager)
+    open_session(git_manager, __file__, data_file_manager)
 
     file_watcher = FileWatcherWatchdog(config.repo_path, git_manager, file_manager)
     identity_creator = IdentityCreatorDialog()
