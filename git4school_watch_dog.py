@@ -132,7 +132,7 @@ if __name__ == "__main__":
     file_watcher = FileWatcherWatchdog(config.repo_path, git_manager, file_manager)
     identity_creator = IdentityCreatorDialog()
 
-    update_gitignore(Path(config.repo_path) / ".gitignore")
+    #update_gitignore(Path(config.repo_path) / ".gitignore")
 
     identity_creator.create_identity_file(config.repo_path,
                                           config.groups)
