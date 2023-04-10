@@ -55,8 +55,9 @@ class IdentityCreatorDialog(IdentityCreatorInterface):
         return last_name
 
     def ask_group(self, groups: list) -> str:
-        groupss = [(groups[i], groups[i]) for i in range(len(groups))] if len(groups) > 0 else ["1",
-                                                                                                "2"]
+        groupss = [(groups[i], groups[i]) for i in range(len(groups))] if len(groups) > 0 else [("1", "1"),
+                                                                                                ("2", "2")]
+
         group = radiolist_dialog(
             title="Creation of the identity file",
             text="Please select your group : ",
