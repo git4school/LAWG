@@ -25,7 +25,7 @@ To launch the script, you can use the following command:
 `pipenv run start`
 
 > As said previously, it's possible to run the script using python simply with `pipenv run
- python git4school_watch_dog.py` or creating a python run configuration with PyCharm.
+ python lawg.py` or creating a python run configuration with PyCharm.
 > In the case you're using the run configuration of PyCharm, you have to check `Emulate 
 terminal in output console` under `Execution` settings.
 
@@ -73,4 +73,4 @@ The different options currently available are the following:
 - `NO_SESSION_CLOSURE` : The working directory is not closed if set to `True`
 - `NO_FIX_LIMITATION` : Unlisted questions can be used with the command `Fix` if set to `True`
 
-> All options are disabled (set to `False`) for the generation of executables available in the [releases](https://github.com/git4school/git4school-automation/releases).
+> All options are disabled (set to `False`) for the generation of executables available in the [releases](https://github.com/git4school/lawg/releases).
