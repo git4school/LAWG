@@ -124,8 +124,7 @@ if __name__ == "__main__":
     config = YAMLConfigFileManager(file_manager)
     read_settings_until_correct(config)
     data_file_manager = PickleDataFileManager(file_manager, Path(config.repo_path) / DATA_FILE_NAME, config.questions)
-    git_manager = GitManagerPython(config.repo_path,
-                                   config.ssh_path)
+    git_manager = GitManagerPython(config.repo_path, config.ssh_path, config.pat)
 
     open_session(git_manager, __file__, data_file_manager)
 
