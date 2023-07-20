@@ -18,7 +18,7 @@ With that done, you can install the dependencies with the following command:
 
 `pipenv install --dev`
 
-## ... start the script
+## ... start the script ...
 
 To launch the script, you can use the following command:
 
@@ -28,6 +28,20 @@ To launch the script, you can use the following command:
  python lawg.py` or creating a python run configuration with PyCharm.
 > In the case you're using the run configuration of PyCharm, you have to check `Emulate 
 terminal in output console` under `Execution` settings.
+
+### ... and authenticate
+
+LAWG performs pushes which requires to authenticate to Github or another one.
+To do this, you have 2 options:
+ - Generate a Personal Access Token (PAT) on Github and enter it in the configuration file, prefixed with your Github username, separated by ":"
+   - In this case, LAWG will modify the remote `origin` to add the authentication tuple
+   >   **Example:**
+   > 
+   >   `pat: "johndoe:ghp_glfjbdxedgUGKgU4MkjWedCUgb2hwe"`
+ - Generate an SSH key, add it to Github and enter the path to the key in the configuration file 
+   > **Example:** 
+   > 
+   > `ssh_path: /Users/johndoe/.ssh/id_rsa`
 
 ## ... check the code
 
