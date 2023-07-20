@@ -1,4 +1,4 @@
-AUTO_BRANCH = "g4s-auto"
+AUTO_BRANCH = "auto"
 NO_WATCHER = False
 NO_SESSION_CLOSURE = False
 NO_FIX_LIMITATION = False

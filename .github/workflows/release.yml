@@ -44,8 +44,8 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: ./dist/git4school_watch_dog.exe
-          asset_name: git4school_watch_dog_win.exe
+          asset_path: ./dist/lawg.exe
+          asset_name: lawg_win.exe
           asset_content_type: application/vnd.microsoft.portable-executable
   
   build_linux:
@@ -70,8 +70,8 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: ./dist/git4school_watch_dog
-          asset_name: git4school_watch_dog_lin
+          asset_path: ./dist/lawg
+          asset_name: lawg_lin
           asset_content_type: application/x-executable
 
   build_macos:
@@ -96,6 +96,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: ./dist/git4school_watch_dog
-          asset_name: git4school_watch_dog_mac
+          asset_path: ./dist/lawg
+          asset_name: lawg_mac
           asset_content_type: application/x-executable

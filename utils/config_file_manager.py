@@ -14,6 +14,15 @@ class Config:
         self._ssh_path = None
         self._questions = None
         self._groups = None
+        self._pat = None
+
+    @property
+    def pat(self):
+        return self._pat
+
+    @pat.setter
+    def pat(self, value):
+        self._pat = value
 
     @property
     def groups(self):
@@ -105,6 +114,14 @@ class ConfigFileManagerInterface(ABC):
         path = verify_path(value)
         self.config.ssh_path = path.resolve(strict=True)
 
+    @property
+    def pat(self):
+        return self.config.pat
+
+    @pat.setter
+    def pat(self, value):
+        self.config.pat = value
+
 
 class YAMLConfigFileManager(ConfigFileManagerInterface):
     def load(self, path):
@@ -117,11 +134,21 @@ class YAMLConfigFileManager(ConfigFileManagerInterface):
         settings = yaml.load(settings_file, Loader=yaml.FullLoader)
 
         try:
-            self.ssh_path = settings["ssh_path"]
             self.questions = settings["questions"]
             self.groups = settings["groups"]
         except KeyError as key:
             raise KeyError(f"{key} is missing from the settings file.")
+
+        ssh_path = settings.get("ssh_path")
+        pat = settings.get("pat")
+
+        if ssh_path is not None:
+            self.ssh_path = ssh_path
+        else:
+            if pat is not None:
+                self.pat = pat
+            else:
+                raise KeyError(f"SSH key or PAT is missing from the settings file.")
 
         self.repo_path = settings.get("repo_path", ".")
 

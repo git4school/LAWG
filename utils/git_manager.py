@@ -4,6 +4,7 @@ from pathlib import Path
 from git import Repo
 
 from utils.constant import REMOTE_NAME
+from utils import generate_authenticated_repo_uri
 
 
 class GitManagerInterface(ABC):
@@ -85,10 +86,12 @@ class GitManagerInterface(ABC):
 
 
 class GitManagerPython(GitManagerInterface):
-    def __init__(self, repo_path, ssh_path):
+    def __init__(self, repo_path, ssh_path, pat):
         super().__init__(repo_path, ssh_path)
         self.repo = Repo(repo_path)
         self.remote = self.repo.remote(name=REMOTE_NAME)
+        if pat is not None:
+            self.remote.set_url(generate_authenticated_repo_uri(pat, self.remote.url), self.remote.url)
 
     def checkout(self, branch: str):
         return self.repo.git.checkout(branch)
