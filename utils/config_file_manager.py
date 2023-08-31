@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 import yaml
+from prompt_toolkit.shortcuts import input_dialog, radiolist_dialog
 
 from . import verify_path
 from .constant import CONFIG_FILE_NAME
@@ -15,6 +16,15 @@ class Config:
         self._questions = None
         self._groups = None
         self._pat = None
+        self._nickname = None
+
+    @property
+    def nickname(self):
+        return self._nickname
+
+    @nickname.setter
+    def nickname(self, value):
+        self._nickname = value
 
     @property
     def pat(self):
@@ -122,6 +132,14 @@ class ConfigFileManagerInterface(ABC):
     def pat(self, value):
         self.config.pat = value
 
+    @property
+    def nickname(self):
+        return self.config.nickname
+
+    @nickname.setter
+    def nickname(self, value):
+        self.config.nickname = value
+
 
 class YAMLConfigFileManager(ConfigFileManagerInterface):
     def load(self, path):
@@ -147,6 +165,10 @@ class YAMLConfigFileManager(ConfigFileManagerInterface):
         else:
             if pat is not None:
                 self.pat = pat
+                try:
+                    self.nickname = settings["nickname"]
+                except KeyError as key:
+                    raise KeyError(f"{key} is missing from the settings file.")
             else:
                 raise KeyError(f"SSH key or PAT is missing from the settings file.")
 
@@ -158,5 +180,48 @@ class YAMLConfigFileManager(ConfigFileManagerInterface):
         data_template = {'ssh_path': str(Path.home() / '.ssh' / 'id_rsa'),
                          'questions': [],
                          'groups': []}
+
+        auth_mode = self.ask_authentication_mode()
+        if auth_mode == 'pat':
+            data_template['pat'] = self.ask_pat()
+            data_template['nickname'] = self.ask_nickname()
+        elif auth_mode == 'ssh':
+            data_template['ssh_path'] = self.ask_ssh_key()
+        else:
+            pass
+
         with self.file_manager.open(CONFIG_FILE_NAME, 'w') as file:
             yaml.dump(data_template, file)
+
+    def ask_nickname(self) -> str:
+        nickname = input_dialog(
+            title='Creation of the config file',
+            text='Please enter your Github nickname: ').run()
+
+        return nickname
+
+    def ask_ssh_key(self) -> str:
+        ssh_key = input_dialog(
+            title='Creation of the config file',
+            text='Please enter your ssh key path (absolute): ').run()
+
+        return ssh_key
+
+    def ask_pat(self) -> str:
+        pat = input_dialog(
+            title='Creation of the config file',
+            text='Please enter your PAT: ').run()
+
+        return pat
+
+    def ask_authentication_mode(self) -> str:
+        auth_mode = radiolist_dialog(
+            title='Creation of the config file',
+            text='What authentication mode do you want to use ?',
+            values=[
+                ('pat', 'Personal Access Token'),
+                ('ssh', 'SSH key')
+            ]
+        ).run()
+
+        return auth_mode

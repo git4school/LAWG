@@ -6,7 +6,7 @@ from typing import List
 
 from git import GitCommandError
 
-from utils.command import FixCommand, CommandInterface, ExitCommand
+from utils.command import FixCommand, ExitCommand, CommandInterface
 from utils.constant import NO_WATCHER, NO_SESSION_CLOSURE, AUTO_BRANCH, CONFIG_FILE_NAME, DATA_FILE_NAME, \
     IDENTITY_FILE_NAME
 from utils.data_file_manager import PickleDataFileManager, DataFileManagerInterface
@@ -14,7 +14,7 @@ from utils.file_manager import FileManagerGlob
 from utils.file_watcher import FileWatcherWatchdog, FileWatcherInterface
 from utils.git_manager import GitManagerPython, GitManagerInterface
 from utils.prompt import PromptAutocomplete
-from utils.readme_creator import IdentityCreatorDialog
+from utils.identity_file_manager import IdentityCreatorDialog
 from utils.config_file_manager import YAMLConfigFileManager, \
     ConfigFileManagerInterface
 
@@ -81,9 +81,9 @@ def read_settings_until_correct(config_file_manager: ConfigFileManagerInterface)
         config_file_manager.load(CONFIG_FILE_NAME)
     except FileNotFoundError as e:
         config_file_manager.create_config_file()
-        input(
-            f"The file '{CONFIG_FILE_NAME}' was created. "
-            "Please fill it with the correct data and press enter to continue.")
+        # input(
+        #     f"The file '{CONFIG_FILE_NAME}' was created. "
+        #     "Please fill it with the correct data and press enter to continue.")
         read_settings_until_correct(config_file_manager)
     except ValueError as e:
         print(e)
@@ -120,21 +120,24 @@ def update_gitignore(gitignore_path: Path) -> None:
 if __name__ == "__main__":
     if getattr(sys, 'frozen', False):
         os.chdir(Path(sys.executable).parent)
+
     file_manager = FileManagerGlob()
     config = YAMLConfigFileManager(file_manager)
+    identity_file_manager = IdentityCreatorDialog()
+
     read_settings_until_correct(config)
+
     data_file_manager = PickleDataFileManager(file_manager, Path(config.repo_path) / DATA_FILE_NAME, config.questions)
-    git_manager = GitManagerPython(config.repo_path, config.ssh_path, config.pat)
+    git_manager = GitManagerPython(config.repo_path, config.ssh_path, config.nickname, config.pat)
 
     open_session(git_manager, __file__, data_file_manager)
 
     file_watcher = FileWatcherWatchdog(config.repo_path, git_manager, file_manager)
-    identity_creator = IdentityCreatorDialog()
 
     #update_gitignore(Path(config.repo_path) / ".gitignore")
 
-    identity_creator.create_identity_file(config.repo_path,
-                                          config.groups)
+    identity_file_manager.create_identity_file(config.repo_path,
+                                               config.groups)
 
     if not NO_WATCHER:
         print("Démarrage de l'observateur ...")
