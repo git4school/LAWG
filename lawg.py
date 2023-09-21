@@ -8,7 +8,7 @@ from git import GitCommandError
 
 from utils.command import FixCommand, ExitCommand, CommandInterface
 from utils.constant import NO_WATCHER, NO_SESSION_CLOSURE, AUTO_BRANCH, CONFIG_FILE_NAME, DATA_FILE_NAME, \
-    IDENTITY_FILE_NAME
+    IDENTITY_FILE_NAME, AUTH_CONFIG_FILE_NAME
 from utils.data_file_manager import PickleDataFileManager, DataFileManagerInterface
 from utils.file_manager import FileManagerGlob
 from utils.file_watcher import FileWatcherWatchdog, FileWatcherInterface
@@ -60,6 +60,7 @@ def close_session(git_manager: GitManagerInterface, file_manager: FileManagerGlo
 
         file_manager.delete_all(Path(folder_to_watch), [Path(folder_to_watch) / ".git/",
                                                         Path(folder_to_watch) / CONFIG_FILE_NAME,
+                                                        Path(folder_to_watch) / AUTH_CONFIG_FILE_NAME,
                                                         Path(folder_to_watch) / DATA_FILE_NAME,
                                                         Path(folder_to_watch) / IDENTITY_FILE_NAME,
                                                         Path(application_path)])
@@ -78,13 +79,8 @@ def exit_handler(git_manager: GitManagerInterface, file_watcher: FileWatcherInte
 
 def read_settings_until_correct(config_file_manager: ConfigFileManagerInterface):
     try:
-        config_file_manager.load(CONFIG_FILE_NAME)
-    except FileNotFoundError as e:
-        config_file_manager.create_config_file()
-        # input(
-        #     f"The file '{CONFIG_FILE_NAME}' was created. "
-        #     "Please fill it with the correct data and press enter to continue.")
-        read_settings_until_correct(config_file_manager)
+        config_file_manager.load_settings(CONFIG_FILE_NAME)
+        config_file_manager.load_auth_settings(AUTH_CONFIG_FILE_NAME)
     except ValueError as e:
         print(e)
         input(
@@ -110,11 +106,11 @@ def get_commands_list(questions: List[str],
 
 
 def update_gitignore(gitignore_path: Path) -> None:
-    exe_wildcard = "git4school_watch_dog*"
+    wildcard = ".settings.auth.yml"
     with open(gitignore_path, "a+") as gitignore_file:
         gitignore_file.seek(0)
-        if exe_wildcard not in gitignore_file.read():
-            gitignore_file.write(f"\n{exe_wildcard}")
+        if wildcard not in gitignore_file.read():
+            gitignore_file.write(f"\n{wildcard}")
 
 
 if __name__ == "__main__":
@@ -130,11 +126,13 @@ if __name__ == "__main__":
     data_file_manager = PickleDataFileManager(file_manager, Path(config.repo_path) / DATA_FILE_NAME, config.questions)
     git_manager = GitManagerPython(config.repo_path, config.ssh_path, config.nickname, config.pat)
 
+    update_gitignore(Path(config.repo_path) / ".gitignore")
+
     open_session(git_manager, __file__, data_file_manager)
 
     file_watcher = FileWatcherWatchdog(config.repo_path, git_manager, file_manager)
 
-    #update_gitignore(Path(config.repo_path) / ".gitignore")
+
 
     identity_file_manager.create_identity_file(config.repo_path,
                                                config.groups)

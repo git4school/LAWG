@@ -17,3 +17,7 @@ def verify_path(path: typing.Union[str, bytes, os.PathLike]) -> Path:
 def generate_authenticated_repo_uri(token: str, remote_uri: str) -> str:
     repo_id = re.search(r"(?:https?://|git@)?github\.com[:/](.*?\.git)", remote_uri).group(1)
     return "https://" + token + "@github.com/" + repo_id
+
+
+def get_missing_fields_in_dict(list: list[str], dict: dict[str, any]):
+    return [field for field in list if field not in dict]

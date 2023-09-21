@@ -4,14 +4,14 @@ from pathlib import Path
 import yaml
 from prompt_toolkit.shortcuts import input_dialog, radiolist_dialog
 
-from . import verify_path
-from .constant import CONFIG_FILE_NAME
+from . import verify_path, get_missing_fields_in_dict
+from .constant import CONFIG_FILE_NAME, AUTH_CONFIG_FILE_NAME, REPO_PATH
 from .file_manager import FileManagerInterface
 
 
 class Config:
     def __init__(self):
-        self._repo_path = None
+        self._repo_path = Path(REPO_PATH)
         self._ssh_path = None
         self._questions = None
         self._groups = None
@@ -75,11 +75,27 @@ class ConfigFileManagerInterface(ABC):
         self.file_manager = file_manager
 
     @abstractmethod
-    def load(self, path) -> Config:
+    def load_settings(self, config_path) -> Config:
         """
         Reads the config file.
-        param path:
+        param config_path:
         :return: the config parameters
+        """
+        pass
+
+    @abstractmethod
+    def load_auth_settings(self, auth_config_path) -> Config:
+        """
+        Reads the auth config file.
+        param auth_config_path:
+        :return: the config parameters
+        """
+        pass
+
+    @abstractmethod
+    def create_auth_config_file(self):
+        """
+        Creates the config file for the student authentication
         """
         pass
 
@@ -142,56 +158,71 @@ class ConfigFileManagerInterface(ABC):
 
 
 class YAMLConfigFileManager(ConfigFileManagerInterface):
-    def load(self, path):
+    def load_settings(self, config_path):
         try:
-            path = verify_path(path)
+            config_path = verify_path(config_path)
         except ValueError as ve:
-            raise FileNotFoundError(ve)
+            self.create_config_file(config_path)
 
-        settings_file = open(path, "r")
+        settings_file = open(config_path, "r")
         settings = yaml.load(settings_file, Loader=yaml.FullLoader)
-
-        try:
+        fields_list = ["questions", "groups"]
+        missing_fields = get_missing_fields_in_dict(fields_list, settings)
+        if missing_fields:
+            raise KeyError(f"Following fields are missing from the settings file : {', '.join(missing_fields)}")
+        else:
             self.questions = settings["questions"]
             self.groups = settings["groups"]
-        except KeyError as key:
-            raise KeyError(f"{key} is missing from the settings file.")
 
-        ssh_path = settings.get("ssh_path")
-        pat = settings.get("pat")
-
-        if ssh_path is not None:
-            self.ssh_path = ssh_path
-        else:
-            if pat is not None:
-                self.pat = pat
-                try:
-                    self.nickname = settings["nickname"]
-                except KeyError as key:
-                    raise KeyError(f"{key} is missing from the settings file.")
-            else:
-                raise KeyError(f"SSH key or PAT is missing from the settings file.")
-
-        self.repo_path = settings.get("repo_path", ".")
+        settings_file.close()
 
         return self
 
-    def create_config_file(self):
-        data_template = {'ssh_path': str(Path.home() / '.ssh' / 'id_rsa'),
-                         'questions': [],
-                         'groups': []}
+    def load_auth_settings(self, auth_config_path):
+        try:
+            auth_config_path = verify_path(auth_config_path)
+        except ValueError as ve:
+            self.create_auth_config_file(auth_config_path)
 
-        auth_mode = self.ask_authentication_mode()
-        if auth_mode == 'pat':
-            data_template['pat'] = self.ask_pat()
-            data_template['nickname'] = self.ask_nickname()
-        elif auth_mode == 'ssh':
-            data_template['ssh_path'] = self.ask_ssh_key()
+        auth_settings_file = open(auth_config_path, "r")
+        auth_settings = yaml.load(auth_settings_file, Loader=yaml.FullLoader)
+        auth_settings_file.close()
+
+        fields_list = ["ssh_path", "pat", "nickname"]
+        missing_fields = get_missing_fields_in_dict(fields_list, auth_settings)
+        if missing_fields:
+            if "ssh_path" in missing_fields:
+                if "pat" in missing_fields:
+                    auth_mode = self.ask_authentication_mode()
+                    if auth_mode == "pat":
+                        auth_settings["pat"] = self.ask_pat()
+                        if "nickname" in missing_fields:
+                            auth_settings["nickname"] = self.ask_nickname()
+                    elif auth_mode == "ssh":
+                        auth_settings["ssh_path"] = self.ask_ssh_key()
+
+            with self.file_manager.open(auth_config_path, 'w') as file:
+                yaml.dump(auth_settings, file)
+
+        if auth_settings.get("ssh_path"):
+            self.ssh_path = auth_settings.get("ssh_path")
         else:
-            pass
+            self.pat = auth_settings.get("pat")
+            self.nickname = auth_settings.get("nickname")
 
-        with self.file_manager.open(CONFIG_FILE_NAME, 'w') as file:
-            yaml.dump(data_template, file)
+        return self
+
+    def create_auth_config_file(self, path):
+        data = {}
+
+        with self.file_manager.open(path, 'w') as file:
+            yaml.dump(data, file)
+
+    def create_config_file(self, path):
+        data = {'questions': [],
+                'groups': []}
+        with self.file_manager.open(path, 'w') as file:
+            yaml.dump(data, file)
 
     def ask_nickname(self) -> str:
         nickname = input_dialog(
@@ -225,3 +256,4 @@ class YAMLConfigFileManager(ConfigFileManagerInterface):
         ).run()
 
         return auth_mode
+
