@@ -6,6 +6,7 @@ from typing import List
 
 from git import GitCommandError
 
+from utils import find_stash_with_message
 from utils.command import FixCommand, ExitCommand, CommandInterface
 from utils.constant import NO_WATCHER, NO_SESSION_CLOSURE, AUTO_BRANCH, CONFIG_FILE_NAME, DATA_FILE_NAME, \
     IDENTITY_FILE_NAME, AUTH_CONFIG_FILE_NAME
@@ -26,9 +27,12 @@ def open_session(git_manager: GitManagerInterface, __file__, data_file_manager: 
         git_manager.reset("HEAD", hard=True)
 
     try:
-        git_manager.stash(pop=True)
+        stash_list = git_manager.stash(command="list")
+        auto_stash = find_stash_with_message(stash_list, "auto")
+        if auto_stash:
+            git_manager.stash(command="pop", target=auto_stash)
     except GitCommandError as stash_error:
-        print("No stash found!")
+        pass
 
     try:
         code = git_manager.pull()
@@ -48,7 +52,13 @@ def close_session(git_manager: GitManagerInterface, file_manager: FileManagerGlo
     git_manager.duplicate_commit(commit_message, AUTO_BRANCH, allow_empty=True)
 
     if not NO_SESSION_CLOSURE:
-        git_manager.stash(all=True, message=AUTO_BRANCH)
+        auth_file_path = str((Path(folder_to_watch)/AUTH_CONFIG_FILE_NAME).relative_to(folder_to_watch))
+        try:
+            git_manager.add(auth_file_path, force=True)
+            git_manager.stash(target=auth_file_path, message="auth")
+            git_manager.stash(all=True, message="auto")
+        except GitCommandError as stash_error:
+            pass
 
         if getattr(sys, 'frozen', False):
             application_path = Path(sys.executable)
@@ -77,21 +87,24 @@ def exit_handler(git_manager: GitManagerInterface, file_watcher: FileWatcherInte
     exit_script(git_manager, file_watcher, file_manager, folder_to_watch, __file__, data_file_manager)
 
 
-def read_settings_until_correct(config_file_manager: ConfigFileManagerInterface):
+def read_settings(config_file_manager: ConfigFileManagerInterface):
     try:
         config_file_manager.load_settings(CONFIG_FILE_NAME)
-        config_file_manager.load_auth_settings(AUTH_CONFIG_FILE_NAME)
     except ValueError as e:
         print(e)
         input(
             f"Please correct the path '{CONFIG_FILE_NAME}' and press enter to continue.")
-        read_settings_until_correct(config_file_manager)
+        read_settings(config_file_manager)
     except KeyError as e:
         print(e)
         input(
             f"Please fill the file '{CONFIG_FILE_NAME}' with the correct data "
             "and press enter to continue.")
-        read_settings_until_correct(config_file_manager)
+        read_settings(config_file_manager)
+
+
+def read_auth_settings(config_file_manager: ConfigFileManagerInterface):
+    config_file_manager.load_auth_settings(AUTH_CONFIG_FILE_NAME)
 
 
 def get_commands_list(questions: List[str],
@@ -121,10 +134,18 @@ if __name__ == "__main__":
     config = YAMLConfigFileManager(file_manager)
     identity_file_manager = IdentityCreatorDialog()
 
-    read_settings_until_correct(config)
-
-    data_file_manager = PickleDataFileManager(file_manager, Path(config.repo_path) / DATA_FILE_NAME, config.questions)
+    read_settings(config)
     git_manager = GitManagerPython(config.repo_path, config.ssh_path, config.nickname, config.pat)
+
+    stash_list = git_manager.stash(command="list")
+    auth_stash = find_stash_with_message(stash_list, "auth")
+    if auth_stash:
+        auth_file_path = str((Path(config.repo_path) / AUTH_CONFIG_FILE_NAME).relative_to(config.repo_path))
+        git_manager.stash(command="pop", target=auth_stash)
+        git_manager.restore(auth_file_path, staged=True)
+
+    read_auth_settings(config)
+    data_file_manager = PickleDataFileManager(file_manager, Path(config.repo_path) / DATA_FILE_NAME, config.questions)
 
     update_gitignore(Path(config.repo_path) / ".gitignore")
 
@@ -132,10 +153,7 @@ if __name__ == "__main__":
 
     file_watcher = FileWatcherWatchdog(config.repo_path, git_manager, file_manager)
 
-
-
-    identity_file_manager.create_identity_file(config.repo_path,
-                                               config.groups)
+    identity_file_manager.create_identity_file(config.repo_path, config.groups)
 
     if not NO_WATCHER:
         print("Démarrage de l'observateur ...")

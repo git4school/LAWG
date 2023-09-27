@@ -45,7 +45,7 @@ class GitManagerInterface(ABC):
         pass
 
     @abstractmethod
-    def add(self, file_path, intent_to_add: bool = False):
+    def add(self, file_path, intent_to_add: bool = False, force: bool = False):
         pass
 
     @abstractmethod
@@ -73,7 +73,8 @@ class GitManagerInterface(ABC):
         pass
 
     @abstractmethod
-    def stash(self, pop: bool = False, all: bool = False, message: str = None):
+    def stash(self, command: str = "push", target: str = None, all: bool = False, message: str = None,
+              untracked: bool = False):
         pass
 
     @abstractmethod
@@ -82,6 +83,10 @@ class GitManagerInterface(ABC):
 
     @abstractmethod
     def merge(self, abort=False):
+        pass
+
+    @abstractmethod
+    def restore(self, target: str, staged: bool = False):
         pass
 
 
@@ -131,9 +136,9 @@ class GitManagerPython(GitManagerInterface):
         except Exception as e:
             print(e)
 
-    def add(self, file_path, intent_to_add=False):
+    def add(self, file_path, intent_to_add=False, force = False):
         path = Path(file_path)
-        return self.repo.git.add(str(path.relative_to(self.repo_path)), intent_to_add=intent_to_add)
+        return self.repo.git.add(str(path.relative_to(self.repo_path)), intent_to_add=intent_to_add, force=force)
 
     def add_all(self):
         return self.repo.git.add(A=True)
@@ -156,11 +161,26 @@ class GitManagerPython(GitManagerInterface):
     def is_ignored(self, paths) -> bool:
         return bool(self.repo.ignored(paths))
 
-    def stash(self, pop=False, all=False, message=None):
-        if pop:
-            return self.repo.git.stash("pop", all=all, message=message)
-        else:
-            return self.repo.git.stash(all=all, message=message)
+    def stash(self, command="push", target=None, all=False, message=None, untracked=False):
+        valid_commands = {"push", "pop", "apply", "clear", "drop", "create", "store", "save", "list"}
+        if command not in valid_commands:
+            raise ValueError("Error: command must be one of the following: %r." % valid_commands)
+        command_params = [command]
+        self.add_param_if_true(command_params, target, f'{target}')
+        self.add_param_if_true(command_params, all, "--all")
+        self.add_param_if_true(command_params, message, "--message", message)
+        self.add_param_if_true(command_params, untracked, "-u")
+        return self.repo.git.stash(command_params)
 
     def merge(self, abort=False):
-        self.repo.git.merge(abort=abort)
+        return self.repo.git.merge(abort=abort)
+
+    def restore(self, target: str, staged=False):
+        return self.repo.git.restore(target, staged=staged)
+
+    def add_param_if_true(self, command_tab: list[str], condition: bool, *params: list[str]):
+        if condition:
+            for param in params:
+                command_tab.append(param)
+
+
