@@ -4,7 +4,7 @@
 
 Before doing any operation, you need to have these requirements installed:
 
-- _python 3.7_
+- _python 3.9_
 - _pipenv_ installed in the python above
 
 To manage the dependencies, we use the tool [Pipenv](https://pipenv.pypa.io/en/latest/). It also

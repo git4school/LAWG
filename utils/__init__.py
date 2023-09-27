@@ -21,3 +21,8 @@ def generate_authenticated_repo_uri(token: str, remote_uri: str) -> str:
 
 def get_missing_fields_in_dict(list: list[str], dict: dict[str, any]):
     return [field for field in list if field not in dict]
+
+
+def find_stash_with_message(input_string, target_message):
+    match = re.search(rf'stash@{{(\d+)}}: [^:]*: {target_message}', input_string)
+    return f'stash@{{{match.group(1)}}}' if match else None
