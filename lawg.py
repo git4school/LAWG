@@ -81,7 +81,7 @@ def close_session(git_manager: GitManagerInterface, file_manager: FileManagerGlo
         stash_untracked_files(git_manager, auth_file_path)
 
         if getattr(sys, 'frozen', False):
-            application_path = Path(sys.executable)
+            application_path = Path(sys.executable).relative_to(Path(folder_to_watch).absolute())
         elif __file__:
             application_path = Path(__file__)
         else:
