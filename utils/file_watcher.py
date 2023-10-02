@@ -5,11 +5,11 @@ import time
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from git import RemoteProgress
+from git import RemoteProgress, GitCommandError
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers.polling import PollingObserver as Observer
 
-from utils.constant import AUTO_BRANCH, NO_SESSION_CLOSURE
+from utils.constant import AUTO_BRANCH, NO_SESSION_CLOSURE, SAVE_IGNORED_FILES
 from utils.file_manager import FileManagerInterface
 from utils.git_manager import GitManagerInterface
 
@@ -76,7 +76,7 @@ class GitignoreEventHandler(PatternMatchingEventHandler):
         if event.src_path:
             paths.append(Path(os.fsdecode(event.src_path)))
         not_a_dot_git_file = all('.git' not in p.parts for p in paths)
-        if not_a_dot_git_file and not self.git_manager.is_ignored(paths):
+        if not_a_dot_git_file and (SAVE_IGNORED_FILES or not self.git_manager.is_ignored(paths)):
             super().dispatch(event)
 
 
@@ -151,8 +151,10 @@ class FileWatcherWatchdog(FileWatcherInterface):
         if AUTO_BRANCH not in self.git_manager.get_local_branches():
             self.git_manager.branch(AUTO_BRANCH)
         self.git_manager.reset(AUTO_BRANCH)
-        [self.git_manager.add(Path(path)) for path in raw_paths]
-        self.git_manager.commit(message, amend)
+        for path in raw_paths:
+            if not self.git_manager.is_ignored(path):
+                self.git_manager.add(Path(path))
+        self.git_manager.commit(message, amend, allow_empty=True)
         self.git_manager.branch(AUTO_BRANCH, force=True)
         self.git_manager.reset("HEAD@{2}")
 

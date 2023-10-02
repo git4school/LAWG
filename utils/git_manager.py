@@ -3,7 +3,7 @@ from pathlib import Path
 
 from git import Repo
 
-from utils.constant import REMOTE_NAME
+from utils.constant import REMOTE_NAME, SAVE_IGNORED_FILES
 from utils import generate_authenticated_repo_uri
 
 
