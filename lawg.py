@@ -93,6 +93,7 @@ def close_session(git_manager: GitManagerInterface, file_manager: FileManagerGlo
                                                         Path(folder_to_watch) / AUTH_CONFIG_FILE_NAME,
                                                         Path(folder_to_watch) / DATA_FILE_NAME,
                                                         Path(folder_to_watch) / IDENTITY_FILE_NAME,
+                                                        Path(folder_to_watch) / ".gitignore",
                                                         Path(application_path)])
 
     data_file_manager.set_cross_close(False)
