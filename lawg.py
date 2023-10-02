@@ -162,14 +162,14 @@ if __name__ == "__main__":
 
     read_auth_settings(config)
     data_file_manager = PickleDataFileManager(file_manager, Path(config.repo_path) / DATA_FILE_NAME, config.questions)
-
-    update_gitignore(Path(config.repo_path) / ".gitignore")
+    identity_file_manager.create_identity_file(config.repo_path, config.groups)
 
     open_session(git_manager, __file__, data_file_manager)
 
-    file_watcher = FileWatcherWatchdog(config.repo_path, git_manager, file_manager)
-
-    identity_file_manager.create_identity_file(config.repo_path, config.groups)
+    if NO_AUTO_BRANCH:
+        file_watcher = FileWatcherWatchdogOneBranch(config.repo_path, git_manager, file_manager)
+    else:
+        file_watcher = FileWatcherWatchdog(config.repo_path, git_manager, file_manager)
 
     if not NO_WATCHER:
         print("Démarrage de l'observateur ...")
