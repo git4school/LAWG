@@ -160,7 +160,10 @@ class FileWatcherWatchdog(FileWatcherInterface):
         self.previous_diff = None
 
     def __is_diff_empty(self, path: Path) -> bool:
-        self.git_manager.add(Path(path), intent_to_add=True)
+        try:
+            self.git_manager.add(Path(path), intent_to_add=True)
+        except GitCommandError as e:
+            pass
         return not self.git_manager.get_diff(AUTO_BRANCH)
 
     @contextlib.contextmanager

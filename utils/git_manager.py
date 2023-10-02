@@ -136,7 +136,7 @@ class GitManagerPython(GitManagerInterface):
         except Exception as e:
             print(e)
 
-    def add(self, file_path, intent_to_add=False, force = False):
+    def add(self, file_path, intent_to_add=False, force=False):
         path = Path(file_path)
         return self.repo.git.add(str(path.relative_to(self.repo_path)), intent_to_add=intent_to_add, force=force)
 
