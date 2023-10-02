@@ -66,6 +66,7 @@ def open_session(git_manager: GitManagerInterface, __file__, data_file_manager: 
         print("The program will be stop, please contact your supervisor to handle the problem manually.")
         raise
 
+    update_gitignore(Path(config.repo_path) / ".gitignore")
     commit_message = f"Resume"
     git_manager.duplicate_commit(commit_message, AUTO_BRANCH, allow_empty=True)
     data_file_manager.set_cross_close(True)
