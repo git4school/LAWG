@@ -89,6 +89,14 @@ class GitManagerInterface(ABC):
     def restore(self, target: str, staged: bool = False):
         pass
 
+    @abstractmethod
+    def rm(self, target: str, cached: bool = False):
+        pass
+
+    @abstractmethod
+    def version(self):
+        pass
+
 
 class GitManagerPython(GitManagerInterface):
     def __init__(self, repo_path, ssh_path, nickname, pat):
@@ -183,4 +191,8 @@ class GitManagerPython(GitManagerInterface):
             for param in params:
                 command_tab.append(param)
 
+    def rm(self, target: str, cached=False):
+        return self.repo.git.rm(target, cached=cached)
 
+    def version(self):
+        return self.repo.git.version()

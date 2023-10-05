@@ -175,3 +175,46 @@ class FileWatcherWatchdog(FileWatcherInterface):
         self.observer.pause()
         yield
         self.observer.resume()
+
+
+class FileWatcherWatchdogOneBranch(FileWatcherWatchdog):
+    def __init__(self, folder_to_watch, git_manager: GitManagerInterface, file_manager: FileManagerInterface):
+        super().__init__(folder_to_watch, git_manager, file_manager)
+        self.previous_file_saved = None
+
+    def __save(self, raw_paths: any, message: str, amend=False):
+        for path in raw_paths:
+            if not self.git_manager.is_ignored(path):
+                self.git_manager.add(Path(path))
+        self.git_manager.commit(message, amend, allow_empty=True)
+
+    def on_created(self, event):
+        src_path = Path(event.src_path)
+        if src_path == self.previous_file_saved:
+            self.__save([src_path], f"[modified] {src_path.relative_to(self.folder_to_watch)}",
+                        amend=True)
+        else:
+            self.__save([src_path], f"[created] {src_path.relative_to(self.folder_to_watch)}")
+        self.previous_file_saved = None
+
+    def on_deleted(self, event):
+        src_path = Path(event.src_path)
+        self.previous_file_saved = src_path
+        self.__save([src_path], f"[deleted] {src_path.relative_to(self.folder_to_watch)}")
+
+    def on_modified(self, event):
+        src_path = Path(event.src_path)
+        self.__save([src_path], f"[modified] {src_path.relative_to(self.folder_to_watch)}")
+        self.previous_file_saved = None
+
+    def on_moved(self, event):
+        src_path = Path(event.src_path)
+        dest_path = Path(event.dest_path)
+        if src_path.parent == dest_path.parent:
+            message = f"[renamed] {src_path.relative_to(self.folder_to_watch)} →" \
+                      f" {dest_path.name}"
+        else:
+            message = f"[moved] {src_path.relative_to(self.folder_to_watch)} → " \
+                      f"{dest_path.parent.relative_to(self.folder_to_watch)}"
+        self.__save([Path(event.src_path), Path(event.dest_path)], message)
+        self.previous_file_saved = None

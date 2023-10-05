@@ -69,13 +69,23 @@ def open_session(git_manager: GitManagerInterface, __file__, data_file_manager: 
 
     update_gitignore(Path(config.repo_path) / ".gitignore")
     commit_message = f"Resume"
-    git_manager.duplicate_commit(commit_message, AUTO_BRANCH, allow_empty=True)
+    if NO_AUTO_BRANCH:
+        git_manager.add_all()
+        git_manager.commit(commit_message, allow_empty=True)
+        git_manager.push(all=True)
+    else:
+        git_manager.duplicate_commit(commit_message, AUTO_BRANCH, allow_empty=True)
     data_file_manager.set_cross_close(True)
 
 
 def close_session(git_manager: GitManagerInterface, file_manager: FileManagerGlob, folder_to_watch, __file__, data_file_manager: DataFileManagerInterface):
     commit_message = f"Pause"
-    git_manager.duplicate_commit(commit_message, AUTO_BRANCH, allow_empty=True)
+    if NO_AUTO_BRANCH:
+        git_manager.add_all()
+        git_manager.commit(commit_message, allow_empty=True)
+        git_manager.push(all=True)
+    else:
+        git_manager.duplicate_commit(commit_message, AUTO_BRANCH, allow_empty=True)
 
     if not NO_SESSION_CLOSURE:
         auth_file_path = str((Path(folder_to_watch)/AUTH_CONFIG_FILE_NAME).relative_to(folder_to_watch))
@@ -134,8 +144,8 @@ def get_commands_list(questions: List[str],
                       git_service: GitManagerInterface,
                       data_file_manager: DataFileManagerInterface) \
         -> List[CommandInterface]:
-    fix_command = FixCommand(questions, git_service, data_file_manager,
-                             file_watcher_manager)
+    fix_command = FixCommandOneBranch(questions, git_service, data_file_manager, file_watcher_manager) \
+            if NO_AUTO_BRANCH else FixCommand(questions, git_service, data_file_manager, file_watcher_manager)
     exit_command = ExitCommand(file_watcher_manager)
     return [fix_command, exit_command]
 
