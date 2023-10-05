@@ -185,8 +185,13 @@ class FileWatcherWatchdogOneBranch(FileWatcherWatchdog):
     def __save(self, raw_paths: any, message: str, amend=False):
         for path in raw_paths:
             if not self.git_manager.is_ignored(path):
-                self.git_manager.add(Path(path))
+                try:
+                    self.git_manager.add(Path(path))
+                except GitCommandError as e:
+                    print(f"Error when adding {str(path)}")
         self.git_manager.commit(message, amend, allow_empty=True)
+        self.last_message = message
+        get_app().invalidate()
 
     def on_created(self, event):
         src_path = Path(event.src_path)
