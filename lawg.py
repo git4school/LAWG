@@ -5,14 +5,15 @@ from pathlib import Path
 from typing import List
 
 from git import GitCommandError
+from prompt_toolkit import HTML
 
-from utils import find_stash_with_message
-from utils.command import FixCommand, ExitCommand, CommandInterface
+from utils import find_stash_with_message, clear_console
+from utils.command import FixCommand, ExitCommand, CommandInterface, FixCommandOneBranch
 from utils.constant import NO_WATCHER, NO_SESSION_CLOSURE, AUTO_BRANCH, CONFIG_FILE_NAME, DATA_FILE_NAME, \
-    IDENTITY_FILE_NAME, AUTH_CONFIG_FILE_NAME
+    IDENTITY_FILE_NAME, AUTH_CONFIG_FILE_NAME, NO_AUTO_BRANCH
 from utils.data_file_manager import PickleDataFileManager, DataFileManagerInterface
 from utils.file_manager import FileManagerGlob
-from utils.file_watcher import FileWatcherWatchdog, FileWatcherInterface
+from utils.file_watcher import FileWatcherWatchdog, FileWatcherInterface, FileWatcherWatchdogOneBranch
 from utils.git_manager import GitManagerPython, GitManagerInterface
 from utils.prompt import PromptAutocomplete
 from utils.identity_file_manager import IdentityCreatorDialog
@@ -147,9 +148,16 @@ def update_gitignore(gitignore_path: Path) -> None:
             gitignore_file.write(f"\n{wildcard}")
 
 
+def bottom_toolbar():
+    return HTML(f'Last event: {file_watcher.last_message}')
+
+
 if __name__ == "__main__":
+    clear_console()
     if getattr(sys, 'frozen', False):
         os.chdir(Path(sys.executable).parent)
+
+    last_message = ""
 
     file_manager = FileManagerGlob()
     config = YAMLConfigFileManager(file_manager)
@@ -179,10 +187,11 @@ if __name__ == "__main__":
     atexit.register(exit_handler, git_manager, file_watcher, file_manager, config.repo_path, __file__, data_file_manager)
 
     commands = get_commands_list(config.questions, file_watcher, git_manager, data_file_manager)
-    command_prompt = PromptAutocomplete(commands)
+    command_prompt = PromptAutocomplete(commands, bottom_toolbar)
 
     try:
         while True:
+            clear_console()
             command_prompt.prompt()
     except KeyboardInterrupt:
         pass

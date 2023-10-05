@@ -6,10 +6,11 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 from git import RemoteProgress, GitCommandError
+from prompt_toolkit.application import get_app
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers.polling import PollingObserver as Observer
 
-from utils.constant import AUTO_BRANCH, NO_SESSION_CLOSURE, SAVE_IGNORED_FILES
+from utils.constant import AUTO_BRANCH, SAVE_IGNORED_FILES
 from utils.file_manager import FileManagerInterface
 from utils.git_manager import GitManagerInterface
 
@@ -60,9 +61,7 @@ class PausingObserver(Observer):
 
 
 class GitignoreEventHandler(PatternMatchingEventHandler):
-    def __init__(self, git_manager: GitManagerInterface, patterns, ignore_paths,
-                 ignore_directories,
-                 case_sensitive):
+    def __init__(self, git_manager: GitManagerInterface, patterns, ignore_paths, ignore_directories, case_sensitive):
         super().__init__(patterns, ignore_paths, ignore_directories, case_sensitive)
         self.git_manager = git_manager
 
@@ -86,6 +85,7 @@ class FileWatcherWatchdog(FileWatcherInterface):
         self.git_manager = git_manager
         self.folder_to_watch = folder_to_watch
         self.file_manager = file_manager
+        self.last_message = "Workspace opened"
         patterns = ["**"]
         ignore_paths = [".git"]
         ignore_directories = True
@@ -157,6 +157,8 @@ class FileWatcherWatchdog(FileWatcherInterface):
         self.git_manager.commit(message, amend, allow_empty=True)
         self.git_manager.branch(AUTO_BRANCH, force=True)
         self.git_manager.reset("HEAD@{2}")
+        self.last_message = message
+        get_app().invalidate()
 
     def __reset_flags(self):
         self.previous_diff = None

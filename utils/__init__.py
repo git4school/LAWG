@@ -2,6 +2,7 @@ import os
 import re
 import typing
 from pathlib import Path
+from subprocess import call
 
 
 def verify_path(path: typing.Union[str, bytes, os.PathLike]) -> Path:
@@ -26,3 +27,8 @@ def get_missing_fields_in_dict(list: list[str], dict: dict[str, any]):
 def find_stash_with_message(input_string, target_message):
     match = re.search(rf'stash@{{(\d+)}}: [^:]*: {target_message}', input_string)
     return f'stash@{{{match.group(1)}}}' if match else None
+
+
+def clear_console():
+    # check and make call for specific operating system
+    _ = call('clear' if os.name == 'posix' else 'cls')
