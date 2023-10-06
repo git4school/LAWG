@@ -3,7 +3,7 @@ from pathlib import Path
 
 from git import Repo
 
-from utils.constant import REMOTE_NAME
+from utils.constant import REMOTE_NAME, SAVE_IGNORED_FILES
 from utils import generate_authenticated_repo_uri
 
 
@@ -89,6 +89,14 @@ class GitManagerInterface(ABC):
     def restore(self, target: str, staged: bool = False):
         pass
 
+    @abstractmethod
+    def rm(self, target: str, cached: bool = False):
+        pass
+
+    @abstractmethod
+    def version(self):
+        pass
+
 
 class GitManagerPython(GitManagerInterface):
     def __init__(self, repo_path, ssh_path, nickname, pat):
@@ -136,7 +144,7 @@ class GitManagerPython(GitManagerInterface):
         except Exception as e:
             print(e)
 
-    def add(self, file_path, intent_to_add=False, force = False):
+    def add(self, file_path, intent_to_add=False, force=False):
         path = Path(file_path)
         return self.repo.git.add(str(path.relative_to(self.repo_path)), intent_to_add=intent_to_add, force=force)
 
@@ -183,4 +191,8 @@ class GitManagerPython(GitManagerInterface):
             for param in params:
                 command_tab.append(param)
 
+    def rm(self, target: str, cached=False):
+        return self.repo.git.rm(target, cached=cached)
 
+    def version(self):
+        return self.repo.git.version()

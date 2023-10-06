@@ -5,14 +5,15 @@ from pathlib import Path
 from typing import List
 
 from git import GitCommandError
+from prompt_toolkit import HTML
 
-from utils import find_stash_with_message
-from utils.command import FixCommand, ExitCommand, CommandInterface
+from utils import find_stash_with_message, clear_console
+from utils.command import FixCommand, ExitCommand, CommandInterface, FixCommandOneBranch
 from utils.constant import NO_WATCHER, NO_SESSION_CLOSURE, AUTO_BRANCH, CONFIG_FILE_NAME, DATA_FILE_NAME, \
-    IDENTITY_FILE_NAME, AUTH_CONFIG_FILE_NAME
+    IDENTITY_FILE_NAME, AUTH_CONFIG_FILE_NAME, NO_AUTO_BRANCH
 from utils.data_file_manager import PickleDataFileManager, DataFileManagerInterface
 from utils.file_manager import FileManagerGlob
-from utils.file_watcher import FileWatcherWatchdog, FileWatcherInterface
+from utils.file_watcher import FileWatcherWatchdog, FileWatcherInterface, FileWatcherWatchdogOneBranch
 from utils.git_manager import GitManagerPython, GitManagerInterface
 from utils.prompt import PromptAutocomplete
 from utils.identity_file_manager import IdentityCreatorDialog
@@ -66,21 +67,32 @@ def open_session(git_manager: GitManagerInterface, __file__, data_file_manager: 
         print("The program will be stop, please contact your supervisor to handle the problem manually.")
         raise
 
+    update_gitignore(Path(config.repo_path) / ".gitignore")
     commit_message = f"Resume"
-    git_manager.duplicate_commit(commit_message, AUTO_BRANCH, allow_empty=True)
+    if NO_AUTO_BRANCH:
+        git_manager.add_all()
+        git_manager.commit(commit_message, allow_empty=True)
+        git_manager.push(all=True)
+    else:
+        git_manager.duplicate_commit(commit_message, AUTO_BRANCH, allow_empty=True)
     data_file_manager.set_cross_close(True)
 
 
 def close_session(git_manager: GitManagerInterface, file_manager: FileManagerGlob, folder_to_watch, __file__, data_file_manager: DataFileManagerInterface):
     commit_message = f"Pause"
-    git_manager.duplicate_commit(commit_message, AUTO_BRANCH, allow_empty=True)
+    if NO_AUTO_BRANCH:
+        git_manager.add_all()
+        git_manager.commit(commit_message, allow_empty=True)
+        git_manager.push(all=True)
+    else:
+        git_manager.duplicate_commit(commit_message, AUTO_BRANCH, allow_empty=True)
 
     if not NO_SESSION_CLOSURE:
         auth_file_path = str((Path(folder_to_watch)/AUTH_CONFIG_FILE_NAME).relative_to(folder_to_watch))
         stash_untracked_files(git_manager, auth_file_path)
 
         if getattr(sys, 'frozen', False):
-            application_path = Path(sys.executable)
+            application_path = Path(sys.executable).relative_to(Path(folder_to_watch).absolute())
         elif __file__:
             application_path = Path(__file__)
         else:
@@ -92,6 +104,7 @@ def close_session(git_manager: GitManagerInterface, file_manager: FileManagerGlo
                                                         Path(folder_to_watch) / AUTH_CONFIG_FILE_NAME,
                                                         Path(folder_to_watch) / DATA_FILE_NAME,
                                                         Path(folder_to_watch) / IDENTITY_FILE_NAME,
+                                                        Path(folder_to_watch) / ".gitignore",
                                                         Path(application_path)])
 
     data_file_manager.set_cross_close(False)
@@ -131,8 +144,8 @@ def get_commands_list(questions: List[str],
                       git_service: GitManagerInterface,
                       data_file_manager: DataFileManagerInterface) \
         -> List[CommandInterface]:
-    fix_command = FixCommand(questions, git_service, data_file_manager,
-                             file_watcher_manager)
+    fix_command = FixCommandOneBranch(questions, git_service, data_file_manager, file_watcher_manager) \
+            if NO_AUTO_BRANCH else FixCommand(questions, git_service, data_file_manager, file_watcher_manager)
     exit_command = ExitCommand(file_watcher_manager)
     return [fix_command, exit_command]
 
@@ -145,9 +158,16 @@ def update_gitignore(gitignore_path: Path) -> None:
             gitignore_file.write(f"\n{wildcard}")
 
 
+def bottom_toolbar():
+    return HTML(f'Last event: {file_watcher.last_message}')
+
+
 if __name__ == "__main__":
+    clear_console()
     if getattr(sys, 'frozen', False):
         os.chdir(Path(sys.executable).parent)
+
+    last_message = ""
 
     file_manager = FileManagerGlob()
     config = YAMLConfigFileManager(file_manager)
@@ -161,14 +181,14 @@ if __name__ == "__main__":
 
     read_auth_settings(config)
     data_file_manager = PickleDataFileManager(file_manager, Path(config.repo_path) / DATA_FILE_NAME, config.questions)
-
-    update_gitignore(Path(config.repo_path) / ".gitignore")
+    identity_file_manager.create_identity_file(config.repo_path, config.groups)
 
     open_session(git_manager, __file__, data_file_manager)
 
-    file_watcher = FileWatcherWatchdog(config.repo_path, git_manager, file_manager)
-
-    identity_file_manager.create_identity_file(config.repo_path, config.groups)
+    if NO_AUTO_BRANCH:
+        file_watcher = FileWatcherWatchdogOneBranch(config.repo_path, git_manager, file_manager)
+    else:
+        file_watcher = FileWatcherWatchdog(config.repo_path, git_manager, file_manager)
 
     if not NO_WATCHER:
         print("Démarrage de l'observateur ...")
@@ -177,10 +197,11 @@ if __name__ == "__main__":
     atexit.register(exit_handler, git_manager, file_watcher, file_manager, config.repo_path, __file__, data_file_manager)
 
     commands = get_commands_list(config.questions, file_watcher, git_manager, data_file_manager)
-    command_prompt = PromptAutocomplete(commands)
+    command_prompt = PromptAutocomplete(commands, bottom_toolbar)
 
     try:
         while True:
+            clear_console()
             command_prompt.prompt()
     except KeyboardInterrupt:
         pass

@@ -22,8 +22,9 @@ class CommandValidator(Validator):
 
 
 class PromptInterface(ABC):
-    def __init__(self, commands: List[CommandInterface]):
+    def __init__(self, commands: List[CommandInterface], bottom_toolbar):
         self.commands = commands
+        self.bottom_toolbar = bottom_toolbar
 
     @abstractmethod
     def prompt(self):
@@ -40,7 +41,8 @@ class PromptAutocomplete(PromptInterface):
             "Entrez une commande (utilisez Tab pour l'autocomplétion) : ",
             completer=commands,
             complete_while_typing=True,
-            validator=CommandValidator(self.commands))
+            validator=CommandValidator(self.commands),
+            bottom_toolbar=self.bottom_toolbar)
         command = find_command(command_str, self.commands)
         if command:
             command.execute(" ".join(command_str.split()[1:]))

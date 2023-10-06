@@ -2,13 +2,14 @@ import re
 from abc import ABC, abstractmethod
 from sys import exit
 
+from prompt_toolkit.application import get_app
 from prompt_toolkit.validation import ValidationError
 
 from utils.constant import AUTO_BRANCH, NO_FIX_LIMITATION
 from utils.data_file_manager import DataFileManagerInterface
 from utils.file_watcher import FileWatcherInterface
 from utils.git_manager import GitManagerInterface
-from utils.config_file_manager import ConfigFileManagerInterface
+from utils.spinner import Spinner
 
 
 def find_command(command_str, commands):
@@ -32,8 +33,12 @@ class CommandInterface(ABC):
         if not re.match(self.regex, args):
             raise ValidationError(message='This command is unknown.')
 
-    @abstractmethod
     def execute(self, args):
+        with Spinner():
+            self._execute(args)
+
+    @abstractmethod
+    def _execute(self, args):
         pass
 
 
@@ -55,13 +60,27 @@ class FixCommand(CommandInterface):
         }
         super().__init__(command, regex)
 
-    def execute(self, args):
+    def _execute(self, args):
         with self.file_watcher.pause():
             commit_message = f"Fix {args}"
 
             self.data_file_manager.complete_question(args)
 
             self.git_manager.duplicate_commit(commit_message, AUTO_BRANCH, allow_empty=True)
+            self.file_watcher.last_message = commit_message
+            get_app().invalidate()
+
+
+class FixCommandOneBranch(FixCommand):
+    def _execute(self, args):
+        with self.file_watcher.pause():
+            commit_message = f"Fix {args}"
+            self.data_file_manager.complete_question(args)
+            self.git_manager.add_all()
+            self.git_manager.commit(commit_message, allow_empty=True)
+            self.git_manager.push(all=True)
+            self.file_watcher.last_message = commit_message
+            get_app().invalidate()
 
 
 class ExitCommand(CommandInterface):
@@ -74,6 +93,6 @@ class ExitCommand(CommandInterface):
         }
         super().__init__(command, regex)
 
-    def execute(self, args):
+    def _execute(self, args):
         # self.file_watcher.stop()
         exit()
