@@ -5,7 +5,7 @@ import yaml
 from prompt_toolkit.shortcuts import input_dialog, radiolist_dialog
 
 from . import verify_path, get_missing_fields_in_dict
-from .constant import CONFIG_FILE_NAME, AUTH_CONFIG_FILE_NAME, REPO_PATH
+from .constant import REPO_PATH
 from .file_manager import FileManagerInterface
 
 

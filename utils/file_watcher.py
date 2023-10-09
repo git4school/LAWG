@@ -1,6 +1,5 @@
 import contextlib
 import os
-import sys
 import time
 from abc import ABC, abstractmethod
 from pathlib import Path

@@ -2,8 +2,6 @@ import sys
 import threading
 import time
 
-from utils.file_watcher import FileWatcherInterface
-
 
 class Spinner:
     busy = False

@@ -2,16 +2,9 @@ import os
 import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TextIO
-
-import yaml
 
 
 class FileManagerInterface(ABC):
-    # @abstractmethod
-    # def create(self, path: Path, data):
-    #     pass
-
     @abstractmethod
     def delete_file(self, file_path: Path):
         pass
@@ -40,10 +33,6 @@ class FileManagerGlob(FileManagerInterface):
 
     def delete_folder(self, folder_path: Path):
         shutil.rmtree(folder_path)
-
-    # def create(self, path: Path, data):
-    #     with open(path, 'w') as file:
-    #         yaml.dump(data, file)
 
     def delete_file(self, path: Path):
         os.remove(path)
