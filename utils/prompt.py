@@ -18,7 +18,7 @@ class CommandValidator(Validator):
         if command:
             command.validate(document.text)
         else:
-            raise ValidationError(message='Cette commande est inconnue.')
+            raise ValidationError(message='This command is unknown.')
 
 
 class PromptInterface(ABC):
@@ -38,7 +38,7 @@ class PromptAutocomplete(PromptInterface):
                          x.command.items()}
         commands = NestedCompleter.from_nested_dict(commands_dict)
         command_str = prompt(
-            "Entrez une commande (utilisez Tab pour l'autocomplétion) : ",
+            "Type a command (use Tab for autocompletion): ",
             completer=commands,
             complete_while_typing=True,
             validator=CommandValidator(self.commands),

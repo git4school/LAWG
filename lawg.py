@@ -191,7 +191,7 @@ if __name__ == "__main__":
         file_watcher = FileWatcherWatchdog(config.repo_path, git_manager, file_manager)
 
     if not NO_WATCHER:
-        print("Démarrage de l'observateur ...")
+        print("Starting observer ...")
         file_watcher.start()
 
     atexit.register(exit_handler, git_manager, file_watcher, file_manager, config.repo_path, __file__, data_file_manager)
