@@ -199,6 +199,8 @@ if __name__ == "__main__":
     commands = get_commands_list(config.questions, file_watcher, git_manager, data_file_manager)
     command_prompt = PromptAutocomplete(commands, bottom_toolbar)
 
+    file = open(".variables.dat", "w")
+
     try:
         while True:
             clear_console()
