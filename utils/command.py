@@ -1,8 +1,5 @@
-from __future__ import annotations
-
 import re
 from abc import ABC, abstractmethod
-from asyncio import Future, ensure_future
 from sys import exit
 from typing import Sequence
 
@@ -121,37 +118,38 @@ class ExitCommand(CommandInterface):
         exit()
 
 
-def perceived_emotions_dialog(
-    default_values: Sequence[_T] | None = None,
-    style: BaseStyle | None = None,
-) -> Application[list[_T]]:
-    def ok_handler() -> None:
-        get_app().exit(result=cb_list.current_values)
-
-    values = [
-        ("S", "\U0001F641"),
-        ("H", "\U0001F603"),
-        ("N", "\U0001F610"),
-        ("C", "\U0001F914"),
-        ("F", "\U0001FAE5")
-    ]
-
-    cb_list = CheckboxList(values=values, default_values=default_values)
+def perceived_emotions_dialog() -> Application[list[_T]]:
 
     dialog = Dialog(
         title="Émotions perçues",
         body=HSplit(
-            [Label(text="Quelle(s) émotion(s) avez-vous ressenties ?", dont_extend_height=True), cb_list],
+            [
+                Label(text="Quelle(s) émotion(s) avez-vous ressenties ?", dont_extend_height=True),
+                VSplit(
+                    [
+                        Button(text="\U0001F641\U0001F641\U0001F641", handler=likert1, left_symbol="", right_symbol=""),
+                        Button(text="\U0001F641\U0001F641", handler=likert2, left_symbol="", right_symbol=""),
+                        Button(text="\U0001F641", handler=likert3, left_symbol="", right_symbol=""),
+                        Button(text="\U0001F610", handler=likert4, left_symbol="", right_symbol=""),
+                        Button(text="\U0001F603", handler=likert5, left_symbol="", right_symbol=""),
+                        Button(text="\U0001F603\U0001F603", handler=likert6, left_symbol="", right_symbol=""),
+                        Button(text="\U0001F603\U0001F603\U0001F603", handler=likert7, left_symbol="", right_symbol="")
+                    ],
+                    padding=1,
+                    align=HorizontalAlign.CENTER,
+                    padding_char="|"
+                )
+
+            ],
             padding=1,
         ),
-        buttons=[Button(text="Valider", handler=ok_handler)],
         with_background=True,
     )
 
-    return _create_app(dialog, style)
+    return _create_app(dialog, None)
 
 
-def perceived_difficulty_dialog(style: BaseStyle | None = None,) -> Application[list[_T]]:
+def perceived_difficulty_dialog() -> Application[list[_T]]:
     title = "Difficulté perçue"
     text = "Indiquez à quel point vous êtes d'accord avec l'affirmation suivante (1: Pas du tout d'accord, 7: Totalement d'accord) :\n\"J'ai trouvé cette tâche difficile.\""
 
@@ -180,7 +178,7 @@ def perceived_difficulty_dialog(style: BaseStyle | None = None,) -> Application[
         with_background=True,
     )
 
-    return _create_app(dialog, style)
+    return _create_app(dialog, None)
 
 
 def likert1():
@@ -211,37 +209,6 @@ def likert7():
     get_app().exit(result=7)
 
 
-def emotions_dialog(
-    title: AnyFormattedText = "",
-    text: AnyFormattedText = "",
-    ok_text: str = "Ok",
-    cancel_text: str = "Cancel",
-    values: Sequence[tuple[_T, AnyFormattedText]] | None = None,
-    default_values: Sequence[_T] | None = None,
-    style: BaseStyle | None = None,
-) -> Application[list[_T]]:
-    if values is None:
-        values = []
-
-    dialog = Dialog(
-        title=title,
-        body=HSplit(
-            [
-                Label(text=text, dont_extend_height=True),
-                VSplit([
-                    Button(text="\U0001F603", handler=happy),
-                    Button(text="\U0001F610", handler=neutral),
-                    Button(text="\U0001F641", handler=sad),
-                ],
-                padding=1,
-                )
-            ],
-            padding=1,
-        ),
-        with_background=True,
-    )
-
-    return _create_app(dialog, style)
 
 def happy():
     return get_app().exit(result="happy")
