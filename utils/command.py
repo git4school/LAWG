@@ -1,9 +1,20 @@
+from __future__ import annotations
+
 import re
 from abc import ABC, abstractmethod
+from asyncio import Future, ensure_future
 from sys import exit
+from typing import Sequence
 
+from prompt_toolkit import Application
 from prompt_toolkit.application import get_app
+from prompt_toolkit.formatted_text import AnyFormattedText
+from prompt_toolkit.layout import D, Float, VSplit, HSplit, HorizontalAlign
+#from prompt_toolkit.shortcuts import checkboxlist_dialog
+from prompt_toolkit.shortcuts.dialogs import _create_app, _T, radiolist_dialog
+from prompt_toolkit.styles import BaseStyle
 from prompt_toolkit.validation import ValidationError
+from prompt_toolkit.widgets import TextArea, Dialog, Button, CheckboxList, Label
 
 from utils.constant import AUTO_BRANCH, NO_FIX_LIMITATION
 from utils.data_file_manager import DataFileManagerInterface
@@ -60,8 +71,10 @@ class FixCommand(CommandInterface):
         }
         super().__init__(command, regex)
 
+
     def _execute(self, args):
         with self.file_watcher.pause():
+
             commit_message = f"Fix {args}"
 
             self.data_file_manager.complete_question(args)
@@ -72,9 +85,19 @@ class FixCommand(CommandInterface):
 
 
 class FixCommandOneBranch(FixCommand):
+    def execute(self, args):
+        perceived_difficulty = perceived_difficulty_dialog().run()
+        perceived_emotions = perceived_emotions_dialog().run()
+        arguments = {
+            'question': args,
+            'perceived_difficulty': perceived_difficulty,
+            'perceived_emotions': perceived_emotions
+        }
+        super().execute(arguments)
+
     def _execute(self, args):
         with self.file_watcher.pause():
-            commit_message = f"Fix {args}"
+            commit_message = f"Fix {args['question']}\nD={args['perceived_difficulty']}\nE={args['perceived_emotions']}"
             self.data_file_manager.complete_question(args)
             self.git_manager.add_all()
             self.git_manager.commit(commit_message, allow_empty=True)
@@ -96,3 +119,135 @@ class ExitCommand(CommandInterface):
     def _execute(self, args):
         # self.file_watcher.stop()
         exit()
+
+
+def perceived_emotions_dialog(
+    default_values: Sequence[_T] | None = None,
+    style: BaseStyle | None = None,
+) -> Application[list[_T]]:
+    def ok_handler() -> None:
+        get_app().exit(result=cb_list.current_values)
+
+    values = [
+        ("S", "\U0001F641"),
+        ("H", "\U0001F603"),
+        ("N", "\U0001F610"),
+        ("C", "\U0001F914"),
+        ("F", "\U0001FAE5")
+    ]
+
+    cb_list = CheckboxList(values=values, default_values=default_values)
+
+    dialog = Dialog(
+        title="Émotions perçues",
+        body=HSplit(
+            [Label(text="Quelle(s) émotion(s) avez-vous ressenties ?", dont_extend_height=True), cb_list],
+            padding=1,
+        ),
+        buttons=[Button(text="Valider", handler=ok_handler)],
+        with_background=True,
+    )
+
+    return _create_app(dialog, style)
+
+
+def perceived_difficulty_dialog(style: BaseStyle | None = None,) -> Application[list[_T]]:
+    title = "Difficulté perçue"
+    text = "Indiquez à quel point vous êtes d'accord avec l'affirmation suivante (1: Pas du tout d'accord, 7: Totalement d'accord) :\n\"J'ai trouvé cette tâche difficile.\""
+
+    dialog = Dialog(
+        title=title,
+        body=HSplit(
+            [
+                Label(text=text, dont_extend_height=True),
+                VSplit(
+                    [
+                        Button(text="1", handler=likert1, left_symbol="", right_symbol=""),
+                        Button(text="2", handler=likert2, left_symbol="", right_symbol=""),
+                        Button(text="3", handler=likert3, left_symbol="", right_symbol=""),
+                        Button(text="4", handler=likert4, left_symbol="", right_symbol=""),
+                        Button(text="5", handler=likert5, left_symbol="", right_symbol=""),
+                        Button(text="6", handler=likert6, left_symbol="", right_symbol=""),
+                        Button(text="7", handler=likert7, left_symbol="", right_symbol="")
+                    ],
+                    padding=1,
+                    align=HorizontalAlign.CENTER,
+                    padding_char="|"
+                )
+            ],
+            padding=1,
+        ),
+        with_background=True,
+    )
+
+    return _create_app(dialog, style)
+
+
+def likert1():
+    get_app().exit(result=1)
+
+
+def likert2():
+    get_app().exit(result=2)
+
+
+def likert3():
+    get_app().exit(result=3)
+
+
+def likert4():
+    get_app().exit(result=4)
+
+
+def likert5():
+    get_app().exit(result=5)
+
+
+def likert6():
+    get_app().exit(result=6)
+
+
+def likert7():
+    get_app().exit(result=7)
+
+
+def emotions_dialog(
+    title: AnyFormattedText = "",
+    text: AnyFormattedText = "",
+    ok_text: str = "Ok",
+    cancel_text: str = "Cancel",
+    values: Sequence[tuple[_T, AnyFormattedText]] | None = None,
+    default_values: Sequence[_T] | None = None,
+    style: BaseStyle | None = None,
+) -> Application[list[_T]]:
+    if values is None:
+        values = []
+
+    dialog = Dialog(
+        title=title,
+        body=HSplit(
+            [
+                Label(text=text, dont_extend_height=True),
+                VSplit([
+                    Button(text="\U0001F603", handler=happy),
+                    Button(text="\U0001F610", handler=neutral),
+                    Button(text="\U0001F641", handler=sad),
+                ],
+                padding=1,
+                )
+            ],
+            padding=1,
+        ),
+        with_background=True,
+    )
+
+    return _create_app(dialog, style)
+
+def happy():
+    return get_app().exit(result="happy")
+
+def sad():
+    return get_app().exit(result="sad")
+
+def neutral():
+    return get_app().exit(result="neutral")

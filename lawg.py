@@ -159,7 +159,8 @@ def update_gitignore(gitignore_path: Path) -> None:
 
 
 def bottom_toolbar():
-    return HTML(f'Last event: {file_watcher.last_message}')
+    event = file_watcher.last_message.partition("\n")[0]
+    return HTML(f'Last event: {event}')
 
 
 if __name__ == "__main__":
