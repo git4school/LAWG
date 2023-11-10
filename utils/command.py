@@ -1,17 +1,13 @@
 import re
 from abc import ABC, abstractmethod
 from sys import exit
-from typing import Sequence
 
 from prompt_toolkit import Application
 from prompt_toolkit.application import get_app
-from prompt_toolkit.formatted_text import AnyFormattedText
-from prompt_toolkit.layout import D, Float, VSplit, HSplit, HorizontalAlign
-#from prompt_toolkit.shortcuts import checkboxlist_dialog
-from prompt_toolkit.shortcuts.dialogs import _create_app, _T, radiolist_dialog
-from prompt_toolkit.styles import BaseStyle
+from prompt_toolkit.layout import VSplit, HSplit, HorizontalAlign
+from prompt_toolkit.shortcuts.dialogs import _create_app, _T
 from prompt_toolkit.validation import ValidationError
-from prompt_toolkit.widgets import TextArea, Dialog, Button, CheckboxList, Label
+from prompt_toolkit.widgets import Dialog, Button, Label
 
 from utils.constant import AUTO_BRANCH, NO_FIX_LIMITATION
 from utils.data_file_manager import DataFileManagerInterface
@@ -207,14 +203,3 @@ def likert6():
 
 def likert7():
     get_app().exit(result=7)
-
-
-
-def happy():
-    return get_app().exit(result="happy")
-
-def sad():
-    return get_app().exit(result="sad")
-
-def neutral():
-    return get_app().exit(result="neutral")

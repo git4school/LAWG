@@ -188,27 +188,33 @@ class YAMLConfigFileManager(ConfigFileManagerInterface):
         auth_settings = yaml.load(auth_settings_file, Loader=yaml.FullLoader)
         auth_settings_file.close()
 
-        fields_list = ["ssh_path", "pat", "nickname"]
+        fields_list = ["ssh_path", "pat", "nickname", "credential"]
         missing_fields = get_missing_fields_in_dict(fields_list, auth_settings)
         if missing_fields:
             if "ssh_path" in missing_fields:
                 if "pat" in missing_fields:
-                    auth_mode = self.ask_authentication_mode()
-                    if auth_mode == "pat":
-                        auth_settings["pat"] = self.ask_pat()
-                        if "nickname" in missing_fields:
-                            auth_settings["nickname"] = self.ask_nickname()
-                    elif auth_mode == "ssh":
-                        auth_settings["ssh_path"] = self.ask_ssh_key()
+                    if "credential" in missing_fields:
+                        auth_mode = self.ask_authentication_mode()
+                        if auth_mode == "pat":
+                            auth_settings["pat"] = self.ask_pat()
+                            if "nickname" in missing_fields:
+                                auth_settings["nickname"] = self.ask_nickname()
+                        elif auth_mode == "ssh":
+                            auth_settings["ssh_path"] = self.ask_ssh_key()
+                        elif auth_mode == "credential":
+                            auth_settings["credential"] = True
+
 
             with self.file_manager.open(auth_config_path, 'w') as file:
                 yaml.dump(auth_settings, file)
 
         if auth_settings.get("ssh_path"):
             self.ssh_path = auth_settings.get("ssh_path")
-        else:
+        elif auth_settings.get("pat"):
             self.pat = auth_settings.get("pat")
             self.nickname = auth_settings.get("nickname")
+        elif auth_settings.get("credential"):
+            pass
 
         return self
 
@@ -251,7 +257,8 @@ class YAMLConfigFileManager(ConfigFileManagerInterface):
             text='What authentication mode do you want to use ?',
             values=[
                 ('pat', 'Personal Access Token'),
-                ('ssh', 'SSH key')
+                ('ssh', 'SSH key'),
+                ('credential', 'Credential manager')
             ]
         ).run()
 
