@@ -120,16 +120,16 @@ def perceived_emotions_dialog() -> Application[list[_T]]:
         title="Émotions perçues",
         body=HSplit(
             [
-                Label(text="Quelle(s) émotion(s) avez-vous ressenties ?", dont_extend_height=True),
+                Label(text="En réalisation la tâche, j'ai ressenti une émotion fortement positive. (1: Pas du tout d'accord, 7: Totalement d'accord)", dont_extend_height=True),
                 VSplit(
                     [
-                        Button(text="\U0001F641\U0001F641\U0001F641", handler=likert1, left_symbol="", right_symbol=""),
-                        Button(text="\U0001F641\U0001F641", handler=likert2, left_symbol="", right_symbol=""),
-                        Button(text="\U0001F641", handler=likert3, left_symbol="", right_symbol=""),
-                        Button(text="\U0001F610", handler=likert4, left_symbol="", right_symbol=""),
-                        Button(text="\U0001F603", handler=likert5, left_symbol="", right_symbol=""),
-                        Button(text="\U0001F603\U0001F603", handler=likert6, left_symbol="", right_symbol=""),
-                        Button(text="\U0001F603\U0001F603\U0001F603", handler=likert7, left_symbol="", right_symbol="")
+                        Button(text="1", handler=likert1, left_symbol="", right_symbol=""),
+                        Button(text="2", handler=likert2, left_symbol="", right_symbol=""),
+                        Button(text="3", handler=likert3, left_symbol="", right_symbol=""),
+                        Button(text="4", handler=likert4, left_symbol="", right_symbol=""),
+                        Button(text="5", handler=likert5, left_symbol="", right_symbol=""),
+                        Button(text="6", handler=likert6, left_symbol="", right_symbol=""),
+                        Button(text="7", handler=likert7, left_symbol="", right_symbol="")
                     ],
                     padding=1,
                     align=HorizontalAlign.CENTER,
