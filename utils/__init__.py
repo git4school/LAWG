@@ -31,4 +31,4 @@ def find_stash_with_message(input_string, target_message):
 
 def clear_console():
     # check and make call for specific operating system
-    _ = call('clear' if os.name == 'posix' else 'cls')
+    _ = call('clear' if os.name == 'posix' else 'cls', shell=True)
