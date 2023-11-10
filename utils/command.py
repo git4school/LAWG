@@ -120,7 +120,7 @@ def perceived_emotions_dialog() -> Application[list[_T]]:
         title="Émotions perçues",
         body=HSplit(
             [
-                Label(text="En réalisation la tâche, j'ai ressenti une émotion fortement positive. (1: Pas du tout d'accord, 7: Totalement d'accord)", dont_extend_height=True),
+                Label(text="Durant la réalisation de la tâche, j'ai ressenti des émotions positives. (1: Pas du tout d'accord, 7: Totalement d'accord)", dont_extend_height=True),
                 VSplit(
                     [
                         Button(text="1", handler=likert1, left_symbol="", right_symbol=""),
