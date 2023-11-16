@@ -2,7 +2,8 @@ import json
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from prompt_toolkit.shortcuts import input_dialog, radiolist_dialog
+
+from utils import ok_dialog, radiolist_dialog
 
 
 class IdentityCreatorInterface(ABC):
@@ -41,14 +42,14 @@ class IdentityCreatorInterface(ABC):
 
 class IdentityCreatorDialog(IdentityCreatorInterface):
     def ask_first_name(self) -> str:
-        first_name = input_dialog(
+        first_name = ok_dialog(
             title='Creation of the identity file',
             text='Please enter your first name: ').run()
 
         return first_name
 
     def ask_last_name(self) -> str:
-        last_name = input_dialog(
+        last_name = ok_dialog(
             title='Creation of the identity file',
             text='Please enter your last name: ').run()
 
