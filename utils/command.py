@@ -14,6 +14,7 @@ from utils.data_file_manager import DataFileManagerInterface
 from utils.file_manager import FileManagerGlob
 from utils.file_watcher import FileWatcherInterface
 from utils.git_manager import GitManagerInterface
+from utils.session_manager import SessionManagerInterface
 from utils.spinner import Spinner
 
 
@@ -130,17 +131,21 @@ class FinishCommand(CommandInterface):
 
 
 class ExitCommand(CommandInterface):
-    def __init__(self, file_watcher: FileWatcherInterface):
+    def __init__(self, file_watcher: FileWatcherInterface, session_manager: SessionManagerInterface, repo_path,
+                 __file__):
         self.file_watcher = file_watcher
+        self.session_manager = session_manager
+        self.repo_path = repo_path
+        self.__file__ = __file__
         regex = rf'(exit|quit) *$'
         command = {
             'quit': None
         }
         super().__init__(command, regex)
 
-
     def _execute(self, args):
         # self.file_watcher.stop()
+        self.session_manager.close_session(self.repo_path, self.__file__)
         exit()
 
 
