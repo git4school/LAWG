@@ -1,4 +1,5 @@
 import contextlib
+import logging
 import os
 import time
 from abc import ABC, abstractmethod
@@ -187,7 +188,8 @@ class FileWatcherWatchdogOneBranch(FileWatcherWatchdog):
                 try:
                     self.git_manager.add(Path(path))
                 except GitCommandError as e:
-                    print(f"Error when adding {str(path)}")
+                    #logging.warning(f"Error when adding {str(path)}")
+                    pass
         self.git_manager.commit(message, amend, allow_empty=True)
         self.last_message = message
         get_app().invalidate()

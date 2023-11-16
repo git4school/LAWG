@@ -41,7 +41,7 @@ class GitManagerInterface(ABC):
         pass
 
     @abstractmethod
-    def push(self, all: bool):
+    def push(self, all: bool, tags: bool):
         pass
 
     @abstractmethod
@@ -94,6 +94,10 @@ class GitManagerInterface(ABC):
         pass
 
     @abstractmethod
+    def tag(self, tag: str):
+        pass
+
+    @abstractmethod
     def version(self):
         pass
 
@@ -136,11 +140,11 @@ class GitManagerPython(GitManagerInterface):
     def pull(self):
         self.remote.pull()
 
-    def push(self, all=False):
+    def push(self, all=False, tags=False):
         try:
             ssh_cmd = f'ssh -v -i {self.ssh_path}'
             with self.repo.git.custom_environment(GIT_SSH_COMMAND=ssh_cmd):
-                return self.remote.push(all=all)  # progress=MyProgressPrinter())
+                return self.remote.push(all=all, tag=tags)  # progress=MyProgressPrinter())
         except Exception as e:
             print(e)
 
@@ -193,6 +197,9 @@ class GitManagerPython(GitManagerInterface):
 
     def rm(self, target: str, cached=False):
         return self.repo.git.rm(target, cached=cached)
+
+    def tag(self, tag: str):
+        return self.repo.git.tag(tag)
 
     def version(self):
         return self.repo.git.version()

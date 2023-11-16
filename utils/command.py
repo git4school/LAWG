@@ -5,12 +5,13 @@ from sys import exit
 from prompt_toolkit import Application
 from prompt_toolkit.application import get_app
 from prompt_toolkit.layout import VSplit, HSplit, HorizontalAlign
-from prompt_toolkit.shortcuts.dialogs import _create_app, _T
+from prompt_toolkit.shortcuts.dialogs import _create_app, _T, yes_no_dialog
 from prompt_toolkit.validation import ValidationError
 from prompt_toolkit.widgets import Dialog, Button, Label
 
-from utils.constant import AUTO_BRANCH, NO_FIX_LIMITATION
+from utils.constant import AUTO_BRANCH, NO_FIX_LIMITATION, NO_AUTO_BRANCH
 from utils.data_file_manager import DataFileManagerInterface
+from utils.file_manager import FileManagerGlob
 from utils.file_watcher import FileWatcherInterface
 from utils.git_manager import GitManagerInterface
 from utils.spinner import Spinner
@@ -99,15 +100,44 @@ class FixCommandOneBranch(FixCommand):
             get_app().invalidate()
 
 
+class FinishCommand(CommandInterface):
+    def __init__(self, git_manager: GitManagerInterface):
+        self.git_manager = git_manager
+        regex = r'finish'
+        command = {
+            'finish': None
+        }
+        super().__init__(command, regex)
+
+    def execute(self, args):
+        response = yes_no_dialog(
+            title='Finish work',
+            text='Do you confirm you want to conclude your work and tag "v1.0.0"?').run()
+        if response:
+            super().execute(args)
+
+    def _execute(self, args):
+        commit_message = f"Finish"
+        if NO_AUTO_BRANCH:
+            self.git_manager.add_all()
+            self.git_manager.commit(commit_message, allow_empty=True)
+            self.git_manager.tag("v1.0.0")
+            self.git_manager.push(all=True)
+            self.git_manager.push(tags=True)
+        else:
+            self.git_manager.duplicate_commit(commit_message, AUTO_BRANCH, allow_empty=True)
+        exit()
+
+
 class ExitCommand(CommandInterface):
     def __init__(self, file_watcher: FileWatcherInterface):
         self.file_watcher = file_watcher
         regex = rf'(exit|quit) *$'
         command = {
-            'exit': None,
             'quit': None
         }
         super().__init__(command, regex)
+
 
     def _execute(self, args):
         # self.file_watcher.stop()

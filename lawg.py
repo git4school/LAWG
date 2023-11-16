@@ -1,14 +1,19 @@
 import atexit
+import logging
 import os
+import signal
 import sys
+from functools import partial
 from pathlib import Path
 from typing import List
 
 from git import GitCommandError
 from prompt_toolkit import HTML
+from prompt_toolkit.key_binding import bindings, KeyBindings
+from prompt_toolkit.shortcuts import yes_no_dialog
 
 from utils import find_stash_with_message, clear_console
-from utils.command import FixCommand, ExitCommand, CommandInterface, FixCommandOneBranch
+from utils.command import FixCommand, ExitCommand, CommandInterface, FixCommandOneBranch, FinishCommand
 from utils.constant import NO_WATCHER, NO_SESSION_CLOSURE, AUTO_BRANCH, CONFIG_FILE_NAME, DATA_FILE_NAME, \
     IDENTITY_FILE_NAME, AUTH_CONFIG_FILE_NAME, NO_AUTO_BRANCH
 from utils.data_file_manager import PickleDataFileManager, DataFileManagerInterface
@@ -113,6 +118,7 @@ def close_session(git_manager: GitManagerInterface, file_manager: FileManagerGlo
 def exit_script(git_manager: GitManagerInterface, file_watcher: FileWatcherInterface, file_manager: FileManagerGlob, folder_to_watch, __file__, data_file_manager: DataFileManagerInterface):
     file_watcher.stop()
     close_session(git_manager, file_manager, folder_to_watch, __file__, data_file_manager)
+    sys.exit()
 
 
 def exit_handler(git_manager: GitManagerInterface, file_watcher: FileWatcherInterface, file_manager: FileManagerGlob, folder_to_watch, __file__, data_file_manager: DataFileManagerInterface):
@@ -146,8 +152,9 @@ def get_commands_list(questions: List[str],
         -> List[CommandInterface]:
     fix_command = FixCommandOneBranch(questions, git_service, data_file_manager, file_watcher_manager) \
             if NO_AUTO_BRANCH else FixCommand(questions, git_service, data_file_manager, file_watcher_manager)
+    finish_command = FinishCommand(git_service)
     exit_command = ExitCommand(file_watcher_manager)
-    return [fix_command, exit_command]
+    return [fix_command, finish_command, exit_command]
 
 
 def update_gitignore(gitignore_path: Path) -> None:
@@ -158,10 +165,10 @@ def update_gitignore(gitignore_path: Path) -> None:
             gitignore_file.write(f"\n{wildcard}")
 
 
+
 def bottom_toolbar():
     event = file_watcher.last_message.partition("\n")[0]
     return HTML(f'Last event: {event}')
-
 
 if __name__ == "__main__":
     clear_console()
@@ -195,16 +202,20 @@ if __name__ == "__main__":
         print("Starting observer ...")
         file_watcher.start()
 
-    atexit.register(exit_handler, git_manager, file_watcher, file_manager, config.repo_path, __file__, data_file_manager)
+    #atexit.register(exit_handler, git_manager, file_watcher, file_manager, config.repo_path, __file__, data_file_manager)
 
     commands = get_commands_list(config.questions, file_watcher, git_manager, data_file_manager)
     command_prompt = PromptAutocomplete(commands, bottom_toolbar)
 
     file = open(".variables.dat", "w")
 
-    try:
-        while True:
+    while True:
+        try:
             clear_console()
             command_prompt.prompt()
-    except KeyboardInterrupt:
-        pass
+        except KeyboardInterrupt:
+            response = yes_no_dialog(
+                title='Quit & close session',
+                text='Do you confirm you want to quit and close your workspace?').run()
+            if response:
+                exit_handler(git_manager, file_watcher, file_manager, config.repo_path, __file__, data_file_manager)

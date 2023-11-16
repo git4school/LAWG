@@ -70,9 +70,11 @@ class PickleDataFileManager(DataFileManagerInterface):
             with self.file_manager.open(path, "rb") as file:
                 self.data = pickle.load(file)
         except FileNotFoundError:
-            print("No variables.dat found.")
+            #print("No variables.dat found.")
+            pass
         except EOFError:
-            print("Empty variables.dat.")
+            #print("Empty variables.dat.")
+            pass
 
     def complete_question(self, question):
         if question in self.questions \
