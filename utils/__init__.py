@@ -105,3 +105,8 @@ def radiolist_dialog(
     )
 
     return _create_app(dialog, None)
+
+
+class Object:
+    def __init__(self, value):
+        self.value = value

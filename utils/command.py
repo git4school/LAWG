@@ -9,6 +9,7 @@ from prompt_toolkit.shortcuts.dialogs import _create_app, _T, yes_no_dialog
 from prompt_toolkit.validation import ValidationError
 from prompt_toolkit.widgets import Dialog, Button, Label
 
+from utils import Object
 from utils.constant import AUTO_BRANCH, NO_FIX_LIMITATION, NO_AUTO_BRANCH
 from utils.data_file_manager import DataFileManagerInterface
 from utils.file_manager import FileManagerGlob
@@ -66,10 +67,8 @@ class FixCommand(CommandInterface):
         }
         super().__init__(command, regex)
 
-
     def _execute(self, args):
         with self.file_watcher.pause():
-
             commit_message = f"Fix {args}"
 
             self.data_file_manager.complete_question(args)
@@ -150,39 +149,28 @@ class ExitCommand(CommandInterface):
 
 
 def perceived_emotions_dialog() -> Application[list[_T]]:
-
-    dialog = Dialog(
-        title="Émotions perçues",
-        body=HSplit(
-            [
-                Label(text="Durant la réalisation de la tâche, j'ai ressenti des émotions positives. (1: Pas du tout d'accord, 7: Totalement d'accord)", dont_extend_height=True),
-                VSplit(
-                    [
-                        Button(text="1", handler=likert1, left_symbol="", right_symbol=""),
-                        Button(text="2", handler=likert2, left_symbol="", right_symbol=""),
-                        Button(text="3", handler=likert3, left_symbol="", right_symbol=""),
-                        Button(text="4", handler=likert4, left_symbol="", right_symbol=""),
-                        Button(text="5", handler=likert5, left_symbol="", right_symbol=""),
-                        Button(text="6", handler=likert6, left_symbol="", right_symbol=""),
-                        Button(text="7", handler=likert7, left_symbol="", right_symbol="")
-                    ],
-                    padding=1,
-                    align=HorizontalAlign.CENTER,
-                    padding_char="|"
-                )
-
-            ],
-            padding=1,
-        ),
-        with_background=True,
-    )
-
-    return _create_app(dialog, None)
+    return likert_dialog("Émotions perçues", "Durant la réalisation de la tâche, j'ai ressenti des émotions "
+                                             "positives. (1: Pas du tout d'accord, 7: Totalement d'accord)")
 
 
 def perceived_difficulty_dialog() -> Application[list[_T]]:
-    title = "Difficulté perçue"
-    text = "Indiquez à quel point vous êtes d'accord avec l'affirmation suivante (1: Pas du tout d'accord, 7: Totalement d'accord) :\n\"J'ai trouvé cette tâche difficile.\""
+    return likert_dialog("Difficulté perçue",
+                         "Indiquez à quel point vous êtes d'accord avec l'affirmation suivante (1: Pas "
+                         "du tout d'accord, 7: Totalement d'accord) :\n\"J'ai trouvé cette tâche "
+                         "difficile.\"")
+
+
+def likert_dialog(title: str, text: str) -> Application[list[_T]]:
+    selected = Object(1)
+
+    class MyButtonLikert(ButtonLikert):
+        def handler(self):
+            self.focus()
+            selected.value = self.value
+            # get_app().exit(result=self.value)
+
+    def handler_ok():
+        get_app().exit(result=selected.value)
 
     dialog = Dialog(
         title=title,
@@ -191,13 +179,13 @@ def perceived_difficulty_dialog() -> Application[list[_T]]:
                 Label(text=text, dont_extend_height=True),
                 VSplit(
                     [
-                        Button(text="1", handler=likert1, left_symbol="", right_symbol=""),
-                        Button(text="2", handler=likert2, left_symbol="", right_symbol=""),
-                        Button(text="3", handler=likert3, left_symbol="", right_symbol=""),
-                        Button(text="4", handler=likert4, left_symbol="", right_symbol=""),
-                        Button(text="5", handler=likert5, left_symbol="", right_symbol=""),
-                        Button(text="6", handler=likert6, left_symbol="", right_symbol=""),
-                        Button(text="7", handler=likert7, left_symbol="", right_symbol="")
+                        MyButtonLikert(1),
+                        MyButtonLikert(2),
+                        MyButtonLikert(3),
+                        MyButtonLikert(4),
+                        MyButtonLikert(5),
+                        MyButtonLikert(6),
+                        MyButtonLikert(7),
                     ],
                     padding=1,
                     align=HorizontalAlign.CENTER,
@@ -206,35 +194,20 @@ def perceived_difficulty_dialog() -> Application[list[_T]]:
             ],
             padding=1,
         ),
+        buttons=[Button(text="Ok", handler=handler_ok)],
         with_background=True,
     )
 
     return _create_app(dialog, None)
 
 
-def likert1():
-    get_app().exit(result=1)
+class ButtonLikert(Button):
+    def __init__(self, value: str):
+        self.value = value
+        super().__init__(text=value, handler=self.handler, left_symbol="", right_symbol="")
 
+    def handler(self):
+        self.focus()
 
-def likert2():
-    get_app().exit(result=2)
-
-
-def likert3():
-    get_app().exit(result=3)
-
-
-def likert4():
-    get_app().exit(result=4)
-
-
-def likert5():
-    get_app().exit(result=5)
-
-
-def likert6():
-    get_app().exit(result=6)
-
-
-def likert7():
-    get_app().exit(result=7)
+    def focus(self):
+        get_app().layout.focus(self)
